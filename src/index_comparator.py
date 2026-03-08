@@ -142,7 +142,7 @@ fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_BTC'] * base_ibov,
 
 fig.update_layout(
     title='Ibovespa vs Indexadores: Inflação, Dólar, S&P 500, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
-    xaxis_title='Data',
+    xaxis_title='Anos',
     yaxis_title='Pontuação Ajustada (Escala Logarítmica Recomendada)',
     yaxis_tickformat=',.0f',
     hovermode='x unified',
