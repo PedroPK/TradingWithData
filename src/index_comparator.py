@@ -122,7 +122,7 @@ fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa'] * base_ibov,
 
 # IPCA
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_Real'] * base_ibov,
-                         mode='lines', name='Corrigido pelo IPCA', line=dict(color='green', dash='dot')))
+                         mode='lines', name='Corrigido pelo IPCA', line=dict(color='green')))
 
 # Dólar
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_USD'] * base_ibov,
@@ -134,7 +134,7 @@ fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_Gold'] * base_ibov
 
 # S&P 500
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_SP500'] * base_ibov,
-                         mode='lines', name='Em S&P 500', line=dict(color='red', dash='dash')))
+                         mode='lines', name='Em S&P 500', line=dict(color='red')))
 
 # Bitcoin
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_BTC'] * base_ibov,
