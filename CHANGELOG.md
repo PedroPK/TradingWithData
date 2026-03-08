@@ -7,6 +7,15 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.2.0] - 2026-03-08
+
+### Adicionado
+- Suporte ao **S&P 500** (`^GSPC`) como novo indexador de comparação
+- Curva `S&P 500 (USD)` normalizada e exibida no gráfico (linha vermelha tracejada)
+- Título do gráfico atualizado para incluir o S&P 500
+
+---
+
 ## [1.1.0] - 2026-03-07
 
 ### Adicionado

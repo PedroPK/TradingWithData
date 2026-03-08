@@ -4,8 +4,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. Buscar dados diários desde 2010
-# Adicionado GC=F (Ouro Futuro)
-tickers = ['^BVSP', 'USDBRL=X', 'BTC-USD', 'GC=F']
+# Adicionado GC=F (Ouro Futuro) e ^GSPC (S&P 500)
+tickers = ['^BVSP', 'USDBRL=X', 'BTC-USD', 'GC=F', '^GSPC']
 data_yf = yf.download(tickers, start='2010-01-01')
 
 # 2. Tratamento robusto para as colunas do yfinance
@@ -21,7 +21,8 @@ df_prices = df_prices.rename(columns={
     '^BVSP': 'Ibovespa',
     'USDBRL=X': 'USD/BRL',
     'BTC-USD': 'BTC/USD',
-    'GC=F': 'Gold_USD' # Preço da onça de ouro em Dólar
+    'GC=F': 'Gold_USD',  # Preço da onça de ouro em Dólar
+    '^GSPC': 'SP500_USD' # S&P 500 em Dólar
 })
 
 # Garantir que é numérico e remover falhas no Ibovespa (base do estudo)
@@ -82,6 +83,9 @@ df['Ibovespa_BTC'] = df['Ibovespa_USD'] / df['BTC/USD']
 # Ibov em Ouro (Ibov em Dólar / Preço Ouro em Dólar)
 df['Ibovespa_Gold'] = df['Ibovespa_USD'] / df['Gold_USD']
 
+# Ibov em S&P 500 (Ibov em Dólar / Preço S&P 500 em Dólar)
+df['Ibovespa_SP500'] = df['Ibovespa_USD'] / df['SP500_USD']
+
 # 6. Normalizar as curvas (Base 100 ou Base Inicial) para comparação visual
 # Vamos usar o primeiro valor válido de cada série para alinhar todas visualmente no gráfico
 df_norm = pd.DataFrame(index=df.index)
@@ -107,6 +111,7 @@ df_norm['Ibovespa_Real'] = normalize_aligned(df['Ibovespa_Real'], base_ibov)
 df_norm['Ibovespa_USD']  = normalize_aligned(df['Ibovespa_USD'], base_ibov)
 df_norm['Ibovespa_BTC']  = normalize_aligned(df['Ibovespa_BTC'], base_ibov)
 df_norm['Ibovespa_Gold'] = normalize_aligned(df['Ibovespa_Gold'], base_ibov)
+df_norm['Ibovespa_SP500'] = normalize_aligned(df['Ibovespa_SP500'], base_ibov)
 
 # 7. Criar gráfico
 fig = go.Figure()
@@ -127,12 +132,16 @@ fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_USD'] * base_ibov,
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_Gold'] * base_ibov,
                          mode='lines', name='Em Ouro', line=dict(color='#FFD700')))
 
+# S&P 500
+fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_SP500'] * base_ibov,
+                         mode='lines', name='Em S&P 500', line=dict(color='red', dash='dash')))
+
 # Bitcoin
 fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_BTC'] * base_ibov,
                          mode='lines', name='Em Bitcoin', line=dict(color='purple')))
 
 fig.update_layout(
-    title='Ibovespa vs Indexadores: Inflação, Dólar, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
+    title='Ibovespa vs Indexadores: Inflação, Dólar, S&P 500, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
     xaxis_title='Data',
     yaxis_title='Pontuação Ajustada (Escala Logarítmica Recomendada)',
     yaxis_tickformat=',.0f',
