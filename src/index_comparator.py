@@ -132,7 +132,7 @@ fig.add_trace(go.Scatter(x=df_norm.index, y=df_norm['Ibovespa_BTC'] * base_ibov,
                          mode='lines', name='Em Bitcoin', line=dict(color='purple')))
 
 fig.update_layout(
-    title='Ibovespa vs Indexadores: Inflação, Dólar, Ouro e Bitcoin (Normalizado)',
+    title='Ibovespa vs Indexadores: Inflação, Dólar, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
     xaxis_title='Data',
     yaxis_title='Pontuação Ajustada (Escala Logarítmica Recomendada)',
     yaxis_tickformat=',.0f',
