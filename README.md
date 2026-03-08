@@ -97,12 +97,13 @@ TradingWithData/
 
 ## Resultado Esperado
 
-Um gráfico interativo (abre no navegador) com cinco curvas normalizadas desde 2010:
+Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2010:
 
 - **Ibovespa Nominal (R$)**
 - **Corrigido pelo IPCA**
 - **Em Dólar (USD)**
 - **Em Ouro**
+- **S&P 500**
 - **Em Bitcoin**
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
