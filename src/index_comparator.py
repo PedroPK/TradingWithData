@@ -1,6 +1,3 @@
-# Instalar bibliotecas (caso não tenha instalado)
-!pip install yfinance sidrapy plotly pandas
-
 import yfinance as yf
 import sidrapy
 import pandas as pd

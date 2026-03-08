@@ -1,6 +1,6 @@
 # TradingWithData
 
-Comparativo entre índices financeiros: Ibovespa medido em **Reais nominais**, ajustado pelo **IPCA**, convertido para **Dólar**, **Ouro** e **Bitcoin** — com dados históricos desde 2010.
+Comparativo do índice iBovespa, medido em **Reais nominais**, com outros índices financeiros, tais como o **IPCA**, convertido para **Dólar**, ajustado ao **Ouro** e **Bitcoin** (este último com dados históricos desde 2010).
 
 > Veja o [CHANGELOG](CHANGELOG.md) para o histórico de versões.
 
@@ -66,7 +66,7 @@ O script irá:
 1. Baixar cotações históricas do Ibovespa, USD/BRL, BTC/USD e Ouro Futuro (via yfinance)
 2. Buscar o IPCA mensal histórico via SIDRA/IBGE
 3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, ouro e bitcoin)
-4. Abrir um gráfico interativo no navegador
+4. Abrir um gráfico interativo no seu navegador padrão.
 
 ### Notebook Jupyter
 
