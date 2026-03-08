@@ -49,6 +49,7 @@ As bibliotecas instaladas são:
 | `sidrapy` | Coleta do IPCA via API SIDRA (IBGE)             |
 | `pandas`  | Manipulação e tratamento de dados               |
 | `plotly`  | Geração do gráfico interativo                   |
+| `kaleido` | Exportação do gráfico como imagem PNG           |
 
 ---
 
@@ -63,10 +64,11 @@ python src/index_comparator.py
 ```
 
 O script irá:
-1. Baixar cotações históricas do Ibovespa, USD/BRL, BTC/USD e Ouro Futuro (via yfinance)
+1. Baixar cotações históricas do Ibovespa, USD/BRL, BTC/USD, Ouro Futuro e S&P 500 (via yfinance)
 2. Buscar o IPCA mensal histórico via SIDRA/IBGE
-3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, ouro e bitcoin)
-4. Abrir um gráfico interativo no seu navegador padrão.
+3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, ouro, S&P 500 e bitcoin)
+4. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
+5. Abrir o gráfico interativo no seu navegador padrão.
 
 ### Notebook Jupyter
 
@@ -87,6 +89,8 @@ jupyter notebook
 TradingWithData/
 ├── src/
 │   └── index_comparator.py   # Script principal
+├── output/
+│   └── ibovespa_comparativo.png  # Imagem gerada na última execução
 ├── 10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb
 ├── requirements.txt          # Dependências Python
 ├── CHANGELOG.md              # Histórico de versões
@@ -103,7 +107,11 @@ Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2
 - **Corrigido pelo IPCA**
 - **Em Dólar (USD)**
 - **Em Ouro**
-- **S&P 500**
+- **Em S&P 500**
 - **Em Bitcoin**
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
+
+Um arquivo PNG também é salvo automaticamente em `output/ibovespa_comparativo.png` a cada execução.
+
+![Ibovespa vs Indexadores](output/ibovespa_comparativo.png)

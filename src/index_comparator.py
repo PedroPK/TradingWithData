@@ -1,3 +1,4 @@
+import os
 import yfinance as yf
 import sidrapy
 import pandas as pd
@@ -151,5 +152,12 @@ fig.update_layout(
     # Dica: Em gráficos com Bitcoin, escala logarítmica ajuda muito a visualizar
     yaxis_type="log"
 )
+
+# 8. Exportar imagem estática
+output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'output')
+os.makedirs(output_dir, exist_ok=True)
+output_path = os.path.join(output_dir, 'ibovespa_comparativo.png')
+fig.write_image(output_path, width=1400, height=700, scale=2)
+print(f'Gráfico salvo em: {output_path}')
 
 fig.show()

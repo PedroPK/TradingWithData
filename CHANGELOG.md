@@ -7,6 +7,15 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.3.0] - 2026-03-08
+
+### Adicionado
+- Exportação automática do gráfico como imagem PNG em `output/ibovespa_comparativo.png` via **kaleido**
+- Dependência `kaleido>=0.2.1` adicionada ao `requirements.txt`
+- Imagem de exemplo do gráfico referenciada no `README.md`
+
+---
+
 ## [1.2.0] - 2026-03-08
 
 ### Adicionado
