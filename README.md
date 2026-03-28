@@ -1,4 +1,4 @@
-# TradingWithData
+# Trading with Data
 
 Comparativo do índice iBovespa, medido em **Reais nominais**, com outros índices financeiros, tais como o **IPCA**, convertido para **Dólar**, ajustado ao **Ouro** e **Bitcoin** (este último com dados históricos desde 2010).
 
@@ -67,8 +67,9 @@ O script irá:
 1. Baixar cotações históricas do Ibovespa, USD/BRL, BTC/USD, Ouro Futuro e S&P 500 (via yfinance)
 2. Buscar o IPCA mensal histórico via SIDRA/IBGE
 3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, ouro, S&P 500 e bitcoin)
-4. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
-5. Abrir o gráfico interativo no seu navegador padrão.
+4. Salvar o gráfico interativo como HTML em `docs/index.html` (publicado no GitHub Pages)
+5. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
+6. Abrir o gráfico interativo no seu navegador padrão (apenas localmente).
 
 ### Notebook Jupyter
 
@@ -83,10 +84,30 @@ jupyter notebook
 
 ---
 
+## Visualização Online (GitHub Pages)
+
+O gráfico é publicado automaticamente em:
+
+> **`https://<seu-usuario>.github.io/TradingWithData`**
+
+Um **GitHub Actions** (`.github/workflows/update_chart.yml`) roda o script toda semana (segundas às 8h BRT) e publica o resultado sem necessidade de IDE ou instalação local. Você também pode acionar a atualização manualmente pela aba **Actions** do repositório.
+
+Para ativar o GitHub Pages no seu repositório:
+1. Vá em **Settings → Pages**
+2. Em *Source*, selecione a branch `main` e a pasta `/docs`
+3. Salve e aguarde alguns minutos
+
+---
+
 ## Estrutura do Projeto
 
 ```
 TradingWithData/
+├── .github/
+│   └── workflows/
+│       └── update_chart.yml  # GitHub Actions — atualização semanal automática
+├── docs/
+│   └── index.html            # Gráfico interativo (GitHub Pages)
 ├── src/
 │   └── index_comparator.py   # Script principal
 ├── output/

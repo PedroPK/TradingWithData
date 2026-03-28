@@ -153,11 +153,24 @@ fig.update_layout(
     yaxis_type="log"
 )
 
-# 8. Exportar imagem estática
-output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'output')
+# 8. Exportar HTML interativo (GitHub Pages)
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+docs_dir = os.path.join(root_dir, 'docs')
+os.makedirs(docs_dir, exist_ok=True)
+html_path = os.path.join(docs_dir, 'index.html')
+fig.write_html(html_path, include_plotlyjs='cdn')
+print(f'HTML interativo salvo em: {html_path}')
+
+# 9. Exportar imagem estática
+output_dir = os.path.join(root_dir, 'output')
 os.makedirs(output_dir, exist_ok=True)
 output_path = os.path.join(output_dir, 'ibovespa_comparativo.png')
-fig.write_image(output_path, width=1400, height=700, scale=2)
-print(f'Gráfico salvo em: {output_path}')
+try:
+    fig.write_image(output_path, width=1400, height=700, scale=2)
+    print(f'Gráfico salvo em: {output_path}')
+except Exception as e:
+    print(f'Aviso: não foi possível exportar PNG ({e})')
 
-fig.show()
+# Exibe no browser apenas quando rodando localmente
+if not os.environ.get('CI'):
+    fig.show()

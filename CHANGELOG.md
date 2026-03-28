@@ -7,6 +7,21 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.4.0] - 2026-03-28
+
+### Adicionado
+- Publicação automática do gráfico no **GitHub Pages** (`docs/index.html`)
+- **GitHub Actions** (`.github/workflows/update_chart.yml`) que executa o script semanalmente (segundas às 8h BRT) e a cada disparo manual
+- Exportação do gráfico como HTML interativo via `fig.write_html()` com Plotly embutido via CDN
+- Página `docs/index.html` criada como placeholder inicial para o GitHub Pages
+
+### Alterado
+- Script adaptado para não abrir o browser automaticamente quando executado em ambiente CI (`CI=true`)
+- Exportação de PNG agora é tolerante a falhas (não interrompe a execução em ambientes sem kaleido)
+- `README.md` atualizado com instruções de ativação do GitHub Pages e nova estrutura de pastas
+
+---
+
 ## [1.3.0] - 2026-03-08
 
 ### Adicionado

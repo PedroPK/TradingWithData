@@ -1,0 +1,40 @@
+name: Atualizar Gráfico
+
+on:
+  schedule:
+    # Toda segunda-feira às 8h BRT (11h UTC)
+    - cron: '0 11 * * 1'
+  workflow_dispatch: # Permite execução manual pelo GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Gerar gráfico e exportar HTML
+        run: python src/index_comparator.py
+        env:
+          CI: true
+
+      - name: Commitar e publicar docs/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git diff --staged --quiet || git commit -m "chore: atualiza gráfico automaticamente [skip ci]"
+          git push
