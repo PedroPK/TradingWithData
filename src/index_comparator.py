@@ -18,8 +18,8 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
                 max_wait=_IBGE_MAX_WAIT):
     """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
     effective_retries = max(1, max_retries)
+    exc_to_raise = None
     for attempt in range(effective_retries):
-        exc_to_raise = None
         try:
             return sidrapy.get_table(
                 table_code='1737',
