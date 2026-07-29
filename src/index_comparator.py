@@ -14,10 +14,9 @@ _IBGE_BACKOFF_BASE = 2   # seconds
 _IBGE_MAX_WAIT = 32      # seconds (cap to prevent unbounded wait times)
 
 
-def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
-                max_wait=_IBGE_MAX_WAIT):
+def _fetch_ipca():
     """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
-    effective_retries = max(1, max_retries)
+    effective_retries = max(1, _IBGE_MAX_RETRIES)
     exc_to_raise = None
     for attempt in range(effective_retries):
         try:
@@ -41,7 +40,7 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
 
         if attempt == effective_retries - 1:
             raise exc_to_raise  # type: ignore[misc]
-        wait = min(backoff_base ** (attempt + 1), max_wait)
+        wait = min(_IBGE_BACKOFF_BASE ** (attempt + 1), _IBGE_MAX_WAIT)
         print(f"IBGE API error (attempt {attempt + 1}/{effective_retries}): {exc_to_raise}. "
               f"Retrying in {wait}s...")
         time.sleep(wait)
