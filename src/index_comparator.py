@@ -10,14 +10,15 @@ import plotly.graph_objects as go
 # IBGE SIDRA API — helper with retry / exponential backoff
 # ---------------------------------------------------------------------------
 _IBGE_MAX_RETRIES = 5
-_IBGE_BACKOFF_BASE = 2   # segundos
-_IBGE_MAX_WAIT = 32      # segundos (cap para evitar esperas muito longas)
+_IBGE_BACKOFF_BASE = 2   # seconds
+_IBGE_MAX_WAIT = 32      # seconds (cap to prevent unbounded wait times)
 
 
 def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
                 max_wait=_IBGE_MAX_WAIT):
     """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
-    for attempt in range(max(1, max_retries)):
+    effective_retries = max(1, max_retries)
+    for attempt in range(effective_retries):
         try:
             data = sidrapy.get_table(
                 table_code='1737',
@@ -30,10 +31,10 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ChunkedEncodingError) as exc:
-            if attempt == max_retries - 1:
+            if attempt == effective_retries - 1:
                 raise
             wait = min(backoff_base ** (attempt + 1), max_wait)
-            print(f"IBGE API network error (attempt {attempt + 1}/{max_retries}): {exc}. "
+            print(f"IBGE API network error (attempt {attempt + 1}/{effective_retries}): {exc}. "
                   f"Retrying in {wait}s...")
             time.sleep(wait)
         except requests.exceptions.HTTPError as exc:
@@ -41,10 +42,10 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
             # (including cases where the response object is absent and the status code is unknown)
             if exc.response is None or exc.response.status_code < 500:
                 raise
-            if attempt == max_retries - 1:
+            if attempt == effective_retries - 1:
                 raise
             wait = min(backoff_base ** (attempt + 1), max_wait)
-            print(f"IBGE API HTTP error (attempt {attempt + 1}/{max_retries}): {exc}. "
+            print(f"IBGE API HTTP error (attempt {attempt + 1}/{effective_retries}): {exc}. "
                   f"Retrying in {wait}s...")
             time.sleep(wait)
 
