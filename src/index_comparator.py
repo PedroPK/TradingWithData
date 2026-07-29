@@ -1,4 +1,6 @@
 import os
+import time
+import requests
 import yfinance as yf
 import sidrapy
 import pandas as pd
@@ -29,14 +31,45 @@ df_prices = df_prices.rename(columns={
 # Garantir que é numérico e remover falhas no Ibovespa (base do estudo)
 df_prices = df_prices.dropna(subset=['Ibovespa'])
 
-# 3. Buscar IPCA mensal via SIDRA
-ipca_data = sidrapy.get_table(
-    table_code='1737',
-    territorial_level='1',
-    ibge_territorial_code='1',
-    variable='63',
-    period='all'
-)
+# 3. Buscar IPCA mensal via SIDRA (com retry e backoff exponencial para falhas transitórias)
+_IBGE_MAX_RETRIES = 5
+_IBGE_BACKOFF_BASE = 2  # segundos
+
+
+def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE):
+    """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
+    for attempt in range(max_retries):
+        try:
+            data = sidrapy.get_table(
+                table_code='1737',
+                territorial_level='1',
+                ibge_territorial_code='1',
+                variable='63',
+                period='all'
+            )
+            return data
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ChunkedEncodingError) as exc:
+            if attempt == max_retries - 1:
+                raise
+            wait = backoff_base ** attempt
+            print(f"IBGE API network error (attempt {attempt + 1}/{max_retries}): {exc}. "
+                  f"Retrying in {wait}s...")
+            time.sleep(wait)
+        except requests.exceptions.HTTPError as exc:
+            # Retry only on transient server-side errors (5xx); re-raise client errors immediately
+            if exc.response is not None and exc.response.status_code < 500:
+                raise
+            if attempt == max_retries - 1:
+                raise
+            wait = backoff_base ** attempt
+            print(f"IBGE API HTTP error (attempt {attempt + 1}/{max_retries}): {exc}. "
+                  f"Retrying in {wait}s...")
+            time.sleep(wait)
+
+
+ipca_data = _fetch_ipca()
 ipca_df = pd.DataFrame(ipca_data)
 
 # Limpeza do IPCA
