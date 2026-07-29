@@ -19,35 +19,32 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE,
     """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
     effective_retries = max(1, max_retries)
     for attempt in range(effective_retries):
+        exc_to_raise = None
         try:
-            data = sidrapy.get_table(
+            return sidrapy.get_table(
                 table_code='1737',
                 territorial_level='1',
                 ibge_territorial_code='1',
                 variable='63',
                 period='all'
             )
-            return data
         except (requests.exceptions.Timeout,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.ChunkedEncodingError) as exc:
-            if attempt == effective_retries - 1:
-                raise
-            wait = min(backoff_base ** (attempt + 1), max_wait)
-            print(f"IBGE API network error (attempt {attempt + 1}/{effective_retries}): {exc}. "
-                  f"Retrying in {wait}s...")
-            time.sleep(wait)
+            exc_to_raise = exc
         except requests.exceptions.HTTPError as exc:
-            # Retry only on transient server-side errors (5xx); re-raise immediately for anything else
-            # (including cases where the response object is absent and the status code is unknown)
-            if exc.response is None or exc.response.status_code < 500:
+            # Retry only on confirmed 5xx responses; re-raise immediately for anything else
+            # (4xx, unknown status codes outside 500-599, or absent response object)
+            if exc.response is None or not (500 <= exc.response.status_code < 600):
                 raise
-            if attempt == effective_retries - 1:
-                raise
-            wait = min(backoff_base ** (attempt + 1), max_wait)
-            print(f"IBGE API HTTP error (attempt {attempt + 1}/{effective_retries}): {exc}. "
-                  f"Retrying in {wait}s...")
-            time.sleep(wait)
+            exc_to_raise = exc
+
+        if attempt == effective_retries - 1:
+            raise exc_to_raise  # type: ignore[misc]
+        wait = min(backoff_base ** (attempt + 1), max_wait)
+        print(f"IBGE API error (attempt {attempt + 1}/{effective_retries}): {exc_to_raise}. "
+              f"Retrying in {wait}s...")
+        time.sleep(wait)
 
 
 # 1. Buscar dados diários desde 2010
