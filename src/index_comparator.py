@@ -35,8 +35,9 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE):
                   f"Retrying in {wait}s...")
             time.sleep(wait)
         except requests.exceptions.HTTPError as exc:
-            # Retry only on transient server-side errors (5xx); re-raise client errors immediately
-            if exc.response is not None and exc.response.status_code < 500:
+            # Retry only on transient server-side errors (5xx); re-raise immediately for anything else
+            # (including cases where the response object is absent and the status code is unknown)
+            if exc.response is None or exc.response.status_code < 500:
                 raise
             if attempt == max_retries - 1:
                 raise
@@ -45,8 +46,6 @@ def _fetch_ipca(max_retries=_IBGE_MAX_RETRIES, backoff_base=_IBGE_BACKOFF_BASE):
                   f"Retrying in {wait}s...")
             time.sleep(wait)
 
-
-# ---------------------------------------------------------------------------
 
 # 1. Buscar dados diários desde 2010
 # Adicionado GC=F (Ouro Futuro) e ^GSPC (S&P 500)
