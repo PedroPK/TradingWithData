@@ -84,6 +84,32 @@ jupyter notebook
 
 ---
 
+## Testes
+
+### Instalar dependências de teste
+
+```bash
+pip install -r requirements-test.txt
+```
+
+### Rodar suíte padrão (rápida)
+
+```bash
+pytest -q
+```
+
+### Rodar execução completa do notebook (mais lenta)
+
+```bash
+RUN_NOTEBOOK_TESTS=1 pytest -q
+```
+
+Observações:
+1. O teste de notebook executa o arquivo inteiro e depende de internet para baixar dados das APIs.
+2. Em CI, falha na exportação do PNG interrompe o pipeline para evitar publicação parcial.
+
+---
+
 ## Visualização Online (GitHub Pages)
 
 O gráfico é publicado automaticamente em:

@@ -1,0 +1,8 @@
+pytest>=8.0.0
+nbclient>=0.10.0
+nbformat>=5.10.0
+ipykernel>=6.0.0
+matplotlib>=3.8.0
+numpy>=1.26.0
+pandas_datareader>=0.10.0
+sqlalchemy>=2.0.0
