@@ -118,6 +118,11 @@ O gráfico é publicado automaticamente em:
 
 Um **GitHub Actions** (`.github/workflows/update_chart.yml`) roda o script toda semana (segundas às 8h BRT) e publica o resultado sem necessidade de IDE ou instalação local. Você também pode acionar a atualização manualmente pela aba **Actions** do repositório.
 
+Comportamento do workflow:
+1. **pull_request (main):** roda apenas testes rápidos (sem notebook completo) para feedback mais rápido.
+2. **schedule:** roda testes rápidos + notebook completo e só depois atualiza `docs/`.
+3. **workflow_dispatch:** por padrão roda testes rápidos; você pode ativar o input `run_notebook_tests` para incluir notebook completo.
+
 Para ativar o GitHub Pages no seu repositório:
 1. Vá em **Settings → Pages**
 2. Em *Source*, selecione a branch `main` e a pasta `/docs`
