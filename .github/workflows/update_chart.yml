@@ -75,6 +75,8 @@ jobs:
 
   update:
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
     needs:
       - tests_fast
       - tests_notebook
