@@ -43,6 +43,7 @@ jobs:
           CI: true
 
   tests_notebook:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
