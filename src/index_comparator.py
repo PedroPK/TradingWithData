@@ -1,8 +1,50 @@
 import os
+import time
+import requests
 import yfinance as yf
 import sidrapy
 import pandas as pd
 import plotly.graph_objects as go
+
+# ---------------------------------------------------------------------------
+# IBGE SIDRA API — helper with retry / exponential backoff
+# ---------------------------------------------------------------------------
+_IBGE_MAX_RETRIES = 5
+_IBGE_BACKOFF_BASE = 2   # seconds
+_IBGE_MAX_WAIT = 32      # seconds (cap to prevent unbounded wait times)
+
+
+def _fetch_ipca():
+    """Fetch IPCA data from IBGE SIDRA API with retry/exponential-backoff for transient failures."""
+    effective_retries = max(1, _IBGE_MAX_RETRIES)
+    exc_to_raise = None
+    for attempt in range(effective_retries):
+        try:
+            return sidrapy.get_table(
+                table_code='1737',
+                territorial_level='1',
+                ibge_territorial_code='1',
+                variable='63',
+                period='all'
+            )
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.ChunkedEncodingError) as exc:
+            exc_to_raise = exc
+        except requests.exceptions.HTTPError as exc:
+            # Retry only on confirmed 5xx responses; re-raise immediately for anything else
+            # (4xx, unknown status codes outside 500-599, or absent response object)
+            if exc.response is None or not (500 <= exc.response.status_code < 600):
+                raise
+            exc_to_raise = exc
+
+        if attempt == effective_retries - 1:
+            raise exc_to_raise  # type: ignore[misc]
+        wait = min(_IBGE_BACKOFF_BASE ** (attempt + 1), _IBGE_MAX_WAIT)
+        print(f"IBGE API error (attempt {attempt + 1}/{effective_retries}): {exc_to_raise}. "
+              f"Retrying in {wait}s...")
+        time.sleep(wait)
+
 
 # 1. Buscar dados diários desde 2010
 # Adicionado GC=F (Ouro Futuro) e ^GSPC (S&P 500)
@@ -29,14 +71,8 @@ df_prices = df_prices.rename(columns={
 # Garantir que é numérico e remover falhas no Ibovespa (base do estudo)
 df_prices = df_prices.dropna(subset=['Ibovespa'])
 
-# 3. Buscar IPCA mensal via SIDRA
-ipca_data = sidrapy.get_table(
-    table_code='1737',
-    territorial_level='1',
-    ibge_territorial_code='1',
-    variable='63',
-    period='all'
-)
+# 3. Buscar IPCA mensal via SIDRA (com retry e backoff exponencial para falhas transitórias)
+ipca_data = _fetch_ipca()
 ipca_df = pd.DataFrame(ipca_data)
 
 # Limpeza do IPCA
