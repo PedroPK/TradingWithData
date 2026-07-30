@@ -62,7 +62,7 @@ jobs:
           pip install -r requirements-test.txt
 
       - name: Executar notebook completo (agendado ou manual)
-        if: github.event_name == 'schedule' || inputs.run_notebook_tests == true
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_notebook_tests == true)
         timeout-minutes: 20
         run: pytest -q tests/test_notebook_end_to_end.py
         env:
