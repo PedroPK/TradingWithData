@@ -1,16 +1,25 @@
 name: Atualizar Gráfico
 
 on:
+  pull_request:
+    branches:
+      - main
   schedule:
     # Toda segunda-feira às 8h BRT (11h UTC)
     - cron: '0 11 * * 1'
   workflow_dispatch: # Permite execução manual pelo GitHub
+    inputs:
+      run_notebook_tests:
+        description: 'Executar notebook completo nos testes'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  update:
+  tests_fast:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,11 +37,63 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-test.txt
 
-      - name: Executar suíte de testes
-        run: pytest -q
+      - name: Executar testes rápidos (sem notebook)
+        run: pytest -q -m "not notebook"
+        env:
+          CI: true
+
+  tests_notebook:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Executar notebook completo (agendado ou manual)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_notebook_tests == true)
+        timeout-minutes: 20
+        run: pytest -q tests/test_notebook_end_to_end.py
         env:
           CI: true
           RUN_NOTEBOOK_TESTS: "1"
+
+      - name: Pular notebook completo
+        if: github.event_name != 'schedule' && inputs.run_notebook_tests != true
+        run: echo "Notebook completo não executado neste gatilho."
+
+  update:
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    needs:
+      - tests_fast
+      - tests_notebook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v5
+
+      - name: Configurar Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
 
       - name: Gerar gráfico e exportar HTML
         run: python src/index_comparator.py
