@@ -7,6 +7,18 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.5.0] - 2026-08-18
+
+### Adicionado
+- Novo script `src/ibovespa_components.py` para consultar a composição atual do **Ibovespa** a partir da carteira teórica da B3
+- Suporte a saída em **JSON** (`--json`) e exportação em **CSV** (`--csv`) para a lista de componentes do índice
+- Testes automatizados cobrindo a normalização do payload retornado pela B3
+
+### Alterado
+- `README.md` atualizado com instruções de uso do novo script e descrição da consulta da composição atual do índice
+
+---
+
 ## [1.4.0] - 2026-03-28
 
 ### Adicionado

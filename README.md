@@ -71,6 +71,24 @@ O script irá:
 5. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
 6. Abrir o gráfico interativo no seu navegador padrão (apenas localmente).
 
+### Listar a composição atual do Ibovespa
+
+Para consultar a carteira teórica atual do índice direto da B3:
+
+```bash
+python src/ibovespa_components.py
+```
+
+Opções úteis:
+
+```bash
+# Salvar a composição em CSV
+python src/ibovespa_components.py --csv output/ibovespa_components.csv
+
+# Exibir em JSON
+python src/ibovespa_components.py --json
+```
+
 ### Notebook Jupyter
 
 Abra o arquivo `10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb` diretamente no VS Code ou no Jupyter Lab:
@@ -140,7 +158,8 @@ TradingWithData/
 ├── docs/
 │   └── index.html            # Gráfico interativo (GitHub Pages)
 ├── src/
-│   └── index_comparator.py   # Script principal
+│   ├── ibovespa_components.py # Consulta da composição atual do Ibovespa
+│   └── index_comparator.py    # Script principal
 ├── output/
 │   └── ibovespa_comparativo.png  # Imagem gerada na última execução
 ├── 10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb
@@ -161,6 +180,8 @@ Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2
 - **Em Ouro**
 - **Em S&P 500**
 - **Em Bitcoin**
+
+Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3.
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
 
