@@ -215,15 +215,22 @@ def build_performance_figure(
         )
 
     fig.update_layout(
-        title=(
-            "Evolução normalizada dos componentes selecionados do Ibovespa "
-            f"({requested_start_date} a {requested_end_date}, base 100, {plot_count} ações)"
+        title=dict(
+            text=(
+                "Evolução normalizada dos componentes selecionados do Ibovespa "
+                f"({requested_start_date} a {requested_end_date}, base 100, {plot_count} ações)"
+            ),
+            x=0.5,
+            xanchor="center",
+            y=1,
+            yanchor="top",
         ),
         xaxis_title="Data",
-        yaxis_title="Base 100",
+        yaxis=dict(title="Base 100", domain=[0, 0.89]),
         hovermode="x unified",
         template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="top", y=0.92, xanchor="center", x=0.5),
+        margin=dict(t=100),
     )
     return fig
 

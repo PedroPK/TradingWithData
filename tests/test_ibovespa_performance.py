@@ -96,3 +96,21 @@ def test_build_plot_dataframe_includes_ibovespa_and_selected_tickers():
     assert plot_df.iloc[0]["Ibovespa"] == pytest.approx(100.0)
     assert plot_df.iloc[0]["AAA3 - Empresa A"] == pytest.approx(100.0)
     assert plot_df.iloc[-1]["DDD3 - Empresa D"] == pytest.approx(87.5)
+
+
+def test_build_performance_figure_separates_title_and_legend():
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    plot_df = pd.DataFrame(
+        {"Ibovespa": [100.0, 101.0], "AAA3 - Empresa A": [100.0, 105.0]},
+        index=index,
+    )
+
+    figure = ibovespa_performance.build_performance_figure(
+        plot_df=plot_df,
+        requested_start_date="2024-01-01",
+        requested_end_date="2024-01-02",
+        plot_count=2,
+    )
+
+    assert figure.layout.title.y > figure.layout.legend.y
+    assert figure.layout.yaxis.domain == (0, 0.89)
