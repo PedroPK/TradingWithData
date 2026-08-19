@@ -113,4 +113,4 @@ def test_build_performance_figure_separates_title_and_legend():
     )
 
     assert figure.layout.title.y > figure.layout.legend.y
-    assert figure.layout.yaxis.domain == (0, 0.89)
+    assert figure.layout.yaxis.domain == (0, 0.94)

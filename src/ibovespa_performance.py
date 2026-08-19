@@ -222,15 +222,15 @@ def build_performance_figure(
             ),
             x=0.5,
             xanchor="center",
-            y=1,
+            y=0.99,
             yanchor="top",
         ),
         xaxis_title="Data",
-        yaxis=dict(title="Base 100", domain=[0, 0.89]),
+        yaxis=dict(title="Base 100", domain=[0, 0.94]),
         hovermode="x unified",
         template="plotly_white",
-        legend=dict(orientation="h", yanchor="top", y=0.92, xanchor="center", x=0.5),
-        margin=dict(t=100),
+        legend=dict(orientation="h", yanchor="top", y=0.94, xanchor="center", x=0.5),
+        margin=dict(t=5),
     )
     return fig
 
