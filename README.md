@@ -89,6 +89,30 @@ python src/ibovespa_components.py --csv output/ibovespa_components.csv
 python src/ibovespa_components.py --json
 ```
 
+### Ranking de valorização/desvalorização dos componentes
+
+Para gerar uma tabela ordenada do ativo mais valorizado para o menos valorizado, usando por padrão o período de hoje até 4 anos atrás:
+
+```bash
+python src/ibovespa_performance.py
+```
+
+Opções úteis:
+
+```bash
+# Últimos 2 anos
+python src/ibovespa_performance.py --years 2
+
+# Período customizado
+python src/ibovespa_performance.py --start-date 2021-01-01 --end-date 2026-08-18
+
+# Exportar para CSV
+python src/ibovespa_performance.py --csv output/ibovespa_performance.csv
+
+# Exibir em JSON
+python src/ibovespa_performance.py --json
+```
+
 ### Notebook Jupyter
 
 Abra o arquivo `10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb` diretamente no VS Code ou no Jupyter Lab:
@@ -159,6 +183,7 @@ TradingWithData/
 │   └── index.html            # Gráfico interativo (GitHub Pages)
 ├── src/
 │   ├── ibovespa_components.py # Consulta da composição atual do Ibovespa
+│   ├── ibovespa_performance.py # Ranking de valorização/desvalorização dos componentes
 │   └── index_comparator.py    # Script principal
 ├── output/
 │   └── ibovespa_comparativo.png  # Imagem gerada na última execução
@@ -181,7 +206,7 @@ Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2
 - **Em S&P 500**
 - **Em Bitcoin**
 
-Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3.
+Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3, e `src/ibovespa_performance.py` gera o ranking de valorização/desvalorização desses componentes para um período configurável.
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
 

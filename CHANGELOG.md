@@ -7,6 +7,19 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [1.6.0] - 2026-08-18
+
+### Adicionado
+- Novo script `src/ibovespa_performance.py` para gerar um ranking de valorização/desvalorização dos componentes atuais do **Ibovespa**
+- Período padrão configurado de hoje até 4 anos atrás, com personalização via `--years`, `--start-date` e `--end-date`
+- Suporte a saída em **JSON** (`--json`) e exportação em **CSV** (`--csv`) para o ranking de desempenho
+- Testes automatizados cobrindo resolução do período, normalização do retorno do Yahoo Finance e ordenação do ranking
+
+### Alterado
+- `README.md` atualizado com instruções de uso do novo ranking de desempenho dos componentes do índice
+
+---
+
 ## [1.5.0] - 2026-08-18
 
 ### Adicionado
