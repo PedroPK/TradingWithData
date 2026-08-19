@@ -114,3 +114,32 @@ def test_build_performance_figure_separates_title_and_legend():
 
     assert figure.layout.title.y > figure.layout.legend.y
     assert figure.layout.yaxis.domain == (0, 0.94)
+
+
+def test_export_performance_plot_sorts_hover_entries_by_cursor_value(tmp_path):
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    plot_df = pd.DataFrame(
+        {
+            "Ibovespa": [100.0, 102.0],
+            "AAA3 - Empresa A": [100.0, 110.0],
+            "BBB4 - Empresa B": [100.0, 90.0],
+        },
+        index=index,
+    )
+
+    figure = ibovespa_performance.build_performance_figure(
+        plot_df=plot_df,
+        requested_start_date="2024-01-01",
+        requested_end_date="2024-01-02",
+        plot_count=2,
+    )
+
+    html_path = ibovespa_performance.export_performance_plot(
+        figure,
+        output_dir=str(tmp_path),
+        show_browser=False,
+    )
+    html = open(html_path, encoding="utf-8").read()
+
+    assert 'graph.on("plotly_beforehover"' in html
+    assert "trace.index = rank;" in html

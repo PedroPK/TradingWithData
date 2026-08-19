@@ -16,6 +16,45 @@ except ImportError:  # pragma: no cover - allows `python src/ibovespa_performanc
 _DEFAULT_YEARS = 4
 _DEFAULT_TIMEOUT = 30
 _DEFAULT_PLOT_HTML = "ibovespa_performance_plot.html"
+_DYNAMIC_HOVER_SORT_SCRIPT = """
+const graph = document.getElementById("{plot_id}");
+
+graph.on("plotly_beforehover", (event) => {
+    const xaxis = graph._fullLayout.xaxis;
+    const graphBounds = graph.getBoundingClientRect();
+    const cursorX = event.clientX - graphBounds.left - xaxis._offset;
+
+    if (!Number.isFinite(cursorX)) {
+        return;
+    }
+
+    graph._fullData
+        .map((trace, originalIndex) => {
+            const closestPointIndex = trace.x.reduce(
+                (closestIndex, value, index) => (
+                    Math.abs(xaxis.d2p(value) - cursorX)
+                    < Math.abs(xaxis.d2p(trace.x[closestIndex]) - cursorX)
+                        ? index
+                        : closestIndex
+                ),
+                0,
+            );
+            return {
+                originalIndex,
+                trace,
+                value: Number.isFinite(Number(trace.y[closestPointIndex]))
+                    ? Number(trace.y[closestPointIndex])
+                    : -Infinity,
+            };
+        })
+        .sort((left, right) => (
+            (right.value - left.value) || (left.originalIndex - right.originalIndex)
+        ))
+        .forEach(({ trace }, rank) => {
+            trace.index = rank;
+        });
+});
+"""
 
 
 def resolve_period(
@@ -192,25 +231,18 @@ def build_performance_figure(
     """Create the performance comparison figure."""
     fig = go.Figure()
 
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df.index,
-            y=plot_df["Ibovespa"],
-            mode="lines",
-            name="Ibovespa",
-            line=dict(color="black", width=3),
-        )
-    )
-
     for column in plot_df.columns:
+        trace_kwargs: dict[str, Any] = {}
         if column == "Ibovespa":
-            continue
+            trace_kwargs["line"] = dict(color="black", width=3)
+
         fig.add_trace(
             go.Scatter(
                 x=plot_df.index,
                 y=plot_df[column],
                 mode="lines",
                 name=column,
+                **trace_kwargs,
             )
         )
 
@@ -239,7 +271,11 @@ def export_performance_plot(fig: go.Figure, output_dir: str, show_browser: bool)
     """Export the selected performance chart to HTML."""
     os.makedirs(output_dir, exist_ok=True)
     html_path = os.path.join(output_dir, _DEFAULT_PLOT_HTML)
-    fig.write_html(html_path, include_plotlyjs="cdn")
+    fig.write_html(
+        html_path,
+        include_plotlyjs="cdn",
+        post_script=_DYNAMIC_HOVER_SORT_SCRIPT,
+    )
     if show_browser:
         fig.show()
     return html_path
