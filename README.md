@@ -117,6 +117,7 @@ python src/ibovespa_performance.py --plot-count 10 --no-show
 ```
 
 Quando `--plot-count` é informado, o script seleciona metade das ações entre as maiores valorizações e metade entre as maiores desvalorizações, sempre incluindo o próprio **Ibovespa**, e salva o gráfico em `output/ibovespa_performance_plot.html`.
+No painel exibido ao passar o mouse, a variação percentual em relação ao início do período é exibida por padrão. Use o botão **Pontos (base 100)** para alternar para os valores normalizados.
 
 ### Notebook Jupyter
 

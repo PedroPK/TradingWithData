@@ -230,11 +230,17 @@ def build_performance_figure(
 ) -> go.Figure:
     """Create the performance comparison figure."""
     fig = go.Figure()
+    hover_templates: list[str] = []
+    hover_texts = {"points": [], "percent": []}
 
     for column in plot_df.columns:
         trace_kwargs: dict[str, Any] = {}
         if column == "Ibovespa":
             trace_kwargs["line"] = dict(color="black", width=3)
+
+        hover_templates.append(f"<b>{column}</b>: %{{text}}<extra></extra>")
+        hover_texts["points"].append(plot_df[column].map(lambda value: f"{value:.2f} pontos").tolist())
+        hover_texts["percent"].append(((plot_df[column] - 100).map(lambda value: f"{value:+.2f}%")).tolist())
 
         fig.add_trace(
             go.Scatter(
@@ -242,6 +248,8 @@ def build_performance_figure(
                 y=plot_df[column],
                 mode="lines",
                 name=column,
+                text=hover_texts["percent"][-1],
+                hovertemplate=hover_templates[-1],
                 **trace_kwargs,
             )
         )
@@ -258,10 +266,33 @@ def build_performance_figure(
             yanchor="top",
         ),
         xaxis_title="Data",
-        yaxis=dict(title="Base 100", domain=[0, 0.94]),
+        yaxis=dict(title="Base 100", domain=[0, 0.86]),
         hovermode="x unified",
         template="plotly_white",
-        legend=dict(orientation="h", yanchor="top", y=0.94, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="top", y=0.91, xanchor="center", x=0.5),
+        updatemenus=[
+            dict(
+                type="buttons",
+                active=1,
+                direction="right",
+                x=0,
+                xanchor="left",
+                y=0.98,
+                yanchor="top",
+                buttons=[
+                    dict(
+                        label="Pontos (base 100)",
+                        method="restyle",
+                        args=[{"text": hover_texts["points"], "hovertemplate": hover_templates}],
+                    ),
+                    dict(
+                        label="Variação (%)",
+                        method="restyle",
+                        args=[{"text": hover_texts["percent"], "hovertemplate": hover_templates}],
+                    ),
+                ],
+            )
+        ],
         margin=dict(t=5),
     )
     return fig

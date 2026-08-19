@@ -113,7 +113,30 @@ def test_build_performance_figure_separates_title_and_legend():
     )
 
     assert figure.layout.title.y > figure.layout.legend.y
-    assert figure.layout.yaxis.domain == (0, 0.94)
+    assert figure.layout.yaxis.domain == (0, 0.86)
+
+
+def test_build_performance_figure_defaults_hover_to_named_percent_changes():
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    plot_df = pd.DataFrame(
+        {"Ibovespa": [100.0, 102.0], "AAA3 - Empresa A": [100.0, 95.0]},
+        index=index,
+    )
+
+    figure = ibovespa_performance.build_performance_figure(
+        plot_df=plot_df,
+        requested_start_date="2024-01-01",
+        requested_end_date="2024-01-02",
+        plot_count=2,
+    )
+
+    assert figure.data[0].hovertemplate == "<b>Ibovespa</b>: %{text}<extra></extra>"
+    assert figure.data[1].hovertemplate == "<b>AAA3 - Empresa A</b>: %{text}<extra></extra>"
+    assert figure.data[0].text == ("+0.00%", "+2.00%")
+    buttons = figure.layout.updatemenus[0].buttons
+    assert figure.layout.updatemenus[0].active == 1
+    assert [button.label for button in buttons] == ["Pontos (base 100)", "Variação (%)"]
+    assert buttons[0].args[0]["text"][0] == ["100.00 pontos", "102.00 pontos"]
 
 
 def test_export_performance_plot_sorts_hover_entries_by_cursor_value(tmp_path):
@@ -143,3 +166,4 @@ def test_export_performance_plot_sorts_hover_entries_by_cursor_value(tmp_path):
 
     assert 'graph.on("plotly_beforehover"' in html
     assert "trace.index = rank;" in html
+    assert "Variação (%)" in html
