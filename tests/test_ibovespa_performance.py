@@ -49,3 +49,50 @@ def test_build_performance_dataframe_sorts_from_best_to_worst():
     assert performance_df.loc[0, "start_date"] == "2022-08-18"
     assert performance_df.loc[2, "end_price"] == pytest.approx(18.0)
     assert missing_tickers == ["DDD3"]
+
+
+def test_select_plot_tickers_balances_top_and_bottom_performers():
+    performance_df = pd.DataFrame(
+        {
+            "ticker": ["AAA3", "BBB4", "CCC3", "DDD3", "EEE3", "FFF3"],
+            "company": ["A", "B", "C", "D", "E", "F"],
+            "return_percent": [60.0, 50.0, 40.0, -10.0, -20.0, -30.0],
+        }
+    )
+
+    selected = ibovespa_performance.select_plot_tickers(performance_df, 4)
+
+    assert selected == ["AAA3", "BBB4", "EEE3", "FFF3"]
+
+
+def test_build_plot_dataframe_includes_ibovespa_and_selected_tickers():
+    performance_df = pd.DataFrame(
+        {
+            "ticker": ["AAA3", "BBB4", "CCC3", "DDD3"],
+            "company": ["Empresa A", "Empresa B", "Empresa C", "Empresa D"],
+            "return_percent": [50.0, 20.0, -10.0, -30.0],
+        }
+    )
+    index = pd.to_datetime(["2022-08-18", "2022-08-19", "2022-08-22"])
+    price_history = pd.DataFrame(
+        {
+            "AAA3": [10.0, 12.0, 15.0],
+            "BBB4": [20.0, 22.0, 24.0],
+            "CCC3": [30.0, 29.0, 28.0],
+            "DDD3": [40.0, 38.0, 35.0],
+        },
+        index=index,
+    )
+    ibovespa_history = pd.Series([100000.0, 101000.0, 102000.0], index=index, name="^BVSP")
+
+    plot_df = ibovespa_performance.build_plot_dataframe(
+        performance_df=performance_df,
+        price_history=price_history,
+        ibovespa_history=ibovespa_history,
+        plot_count=2,
+    )
+
+    assert list(plot_df.columns) == ["Ibovespa", "AAA3 - Empresa A", "DDD3 - Empresa D"]
+    assert plot_df.iloc[0]["Ibovespa"] == pytest.approx(100.0)
+    assert plot_df.iloc[0]["AAA3 - Empresa A"] == pytest.approx(100.0)
+    assert plot_df.iloc[-1]["DDD3 - Empresa D"] == pytest.approx(87.5)

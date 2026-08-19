@@ -1,8 +1,10 @@
 import argparse
 import json
+import os
 from typing import Any
 
 import pandas as pd
+import plotly.graph_objects as go
 import yfinance as yf
 
 try:
@@ -13,6 +15,7 @@ except ImportError:  # pragma: no cover - allows `python src/ibovespa_performanc
 
 _DEFAULT_YEARS = 4
 _DEFAULT_TIMEOUT = 30
+_DEFAULT_PLOT_HTML = "ibovespa_performance_plot.html"
 
 
 def resolve_period(
@@ -77,6 +80,22 @@ def fetch_price_history(
     return extract_close_prices(raw_prices, yahoo_tickers)
 
 
+def fetch_ibovespa_history(start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.Series:
+    """Fetch adjusted close history for the Ibovespa index."""
+    raw_prices = yf.download(
+        "^BVSP",
+        start=start_date.strftime("%Y-%m-%d"),
+        end=(end_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
+        auto_adjust=True,
+        progress=False,
+    )
+    close_prices = extract_close_prices(raw_prices, ["^BVSP"])
+    series = close_prices["^BVSP"].dropna()
+    if series.empty:
+        raise ValueError("O Yahoo Finance não retornou histórico do Ibovespa para o período informado.")
+    return series
+
+
 def build_performance_dataframe(components: pd.DataFrame, price_history: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     """Build a sorted valuation/devaluation table for Ibovespa components."""
     component_lookup = components.set_index("ticker")
@@ -120,6 +139,105 @@ def build_performance_dataframe(components: pd.DataFrame, price_history: pd.Data
     return performance_df, missing_tickers
 
 
+def select_plot_tickers(performance_df: pd.DataFrame, plot_count: int) -> list[str]:
+    """Select top and bottom performers for plotting."""
+    if plot_count <= 0:
+        raise ValueError("A quantidade de ações para o gráfico deve ser maior que zero.")
+
+    effective_count = min(plot_count, len(performance_df))
+    top_count = (effective_count + 1) // 2
+    bottom_count = effective_count // 2
+
+    top_tickers = performance_df.head(top_count)["ticker"].tolist()
+    bottom_tickers = performance_df.tail(bottom_count)["ticker"].tolist()
+    return top_tickers + bottom_tickers
+
+
+def _normalize_series(series: pd.Series) -> pd.Series:
+    """Normalize a price series to base 100 using its first valid point."""
+    valid_series = series.dropna()
+    if valid_series.empty:
+        raise ValueError("Série vazia não pode ser normalizada.")
+    base_value = float(valid_series.iloc[0])
+    return (series / base_value) * 100
+
+
+def build_plot_dataframe(
+    performance_df: pd.DataFrame,
+    price_history: pd.DataFrame,
+    ibovespa_history: pd.Series,
+    plot_count: int,
+) -> pd.DataFrame:
+    """Build normalized time series for the selected performers plus Ibovespa."""
+    selected_tickers = select_plot_tickers(performance_df, plot_count)
+    selected_history = price_history[selected_tickers].copy()
+
+    plot_df = pd.DataFrame(index=selected_history.index.union(ibovespa_history.index).sort_values())
+    plot_df["Ibovespa"] = _normalize_series(ibovespa_history).reindex(plot_df.index)
+
+    performance_lookup = performance_df.set_index("ticker")
+    for ticker in selected_tickers:
+        label = f"{ticker} - {performance_lookup.loc[ticker, 'company']}"
+        plot_df[label] = _normalize_series(selected_history[ticker]).reindex(plot_df.index)
+
+    return plot_df.ffill().dropna(how="all")
+
+
+def build_performance_figure(
+    plot_df: pd.DataFrame,
+    requested_start_date: str,
+    requested_end_date: str,
+    plot_count: int,
+) -> go.Figure:
+    """Create the performance comparison figure."""
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=plot_df.index,
+            y=plot_df["Ibovespa"],
+            mode="lines",
+            name="Ibovespa",
+            line=dict(color="black", width=3),
+        )
+    )
+
+    for column in plot_df.columns:
+        if column == "Ibovespa":
+            continue
+        fig.add_trace(
+            go.Scatter(
+                x=plot_df.index,
+                y=plot_df[column],
+                mode="lines",
+                name=column,
+            )
+        )
+
+    fig.update_layout(
+        title=(
+            "Evolução normalizada dos componentes selecionados do Ibovespa "
+            f"({requested_start_date} a {requested_end_date}, base 100, {plot_count} ações)"
+        ),
+        xaxis_title="Data",
+        yaxis_title="Base 100",
+        hovermode="x unified",
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+    )
+    return fig
+
+
+def export_performance_plot(fig: go.Figure, output_dir: str, show_browser: bool) -> str:
+    """Export the selected performance chart to HTML."""
+    os.makedirs(output_dir, exist_ok=True)
+    html_path = os.path.join(output_dir, _DEFAULT_PLOT_HTML)
+    fig.write_html(html_path, include_plotlyjs="cdn")
+    if show_browser:
+        fig.show()
+    return html_path
+
+
 def get_ibovespa_performance(
     start_date: str | None = None,
     end_date: str | None = None,
@@ -139,6 +257,7 @@ def get_ibovespa_performance(
         "available_components": len(performance_df),
         "missing_tickers": missing_tickers,
         "performance": performance_df,
+        "price_history": price_history,
     }
 
 
@@ -156,6 +275,18 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--end-date", default=None, help="Data final no formato YYYY-MM-DD. Padrão: hoje.")
     parser.add_argument("--json", action="store_true", help="Exibe a saída em JSON.")
     parser.add_argument("--csv", default=None, help="Salva o ranking em um arquivo CSV.")
+    parser.add_argument(
+        "--plot-count",
+        type=int,
+        default=None,
+        help="Quantidade de ações para o gráfico, dividida entre maiores altas e maiores quedas. O Ibovespa é sempre incluído.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="output",
+        help="Diretório de saída para o gráfico HTML quando --plot-count for informado.",
+    )
+    parser.add_argument("--no-show", action="store_true", help="Não abrir o gráfico no navegador.")
     parser.add_argument("--timeout", type=int, default=_DEFAULT_TIMEOUT, help="Timeout da consulta à B3 em segundos.")
     return parser
 
@@ -169,10 +300,34 @@ def main() -> None:
         timeout=args.timeout,
     )
     performance_df = result["performance"]
+    ci_mode = bool(os.environ.get("CI"))
+    show_browser = not args.no_show and not ci_mode
+    output_messages: list[str] = []
 
     if args.csv:
         performance_df.to_csv(args.csv, index=False)
-        print(f"CSV salvo em: {args.csv}")
+        output_messages.append(f"CSV salvo em: {args.csv}")
+
+    plot_path = None
+    if args.plot_count is not None:
+        ibovespa_history = fetch_ibovespa_history(
+            pd.Timestamp(result["requested_start_date"]),
+            pd.Timestamp(result["requested_end_date"]),
+        )
+        plot_df = build_plot_dataframe(
+            performance_df=performance_df,
+            price_history=result["price_history"],
+            ibovespa_history=ibovespa_history,
+            plot_count=args.plot_count,
+        )
+        fig = build_performance_figure(
+            plot_df=plot_df,
+            requested_start_date=result["requested_start_date"],
+            requested_end_date=result["requested_end_date"],
+            plot_count=min(args.plot_count, len(performance_df)),
+        )
+        plot_path = export_performance_plot(fig, args.output_dir, show_browser)
+        output_messages.append(f"Gráfico HTML salvo em: {plot_path}")
 
     if args.json:
         print(
@@ -184,6 +339,7 @@ def main() -> None:
                     "total_components": result["total_components"],
                     "available_components": result["available_components"],
                     "missing_tickers": result["missing_tickers"],
+                    "plot_html_path": plot_path,
                     "performance": performance_df.to_dict(orient="records"),
                 },
                 ensure_ascii=False,
@@ -191,6 +347,9 @@ def main() -> None:
             )
         )
         return
+
+    for message in output_messages:
+        print(message)
 
     print(f"Ranking de valorização/desvalorização do Ibovespa (carteira B3: {result['reference_date']})")
     print(f"Período solicitado: {result['requested_start_date']} até {result['requested_end_date']}")

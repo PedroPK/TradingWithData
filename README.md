@@ -111,7 +111,12 @@ python src/ibovespa_performance.py --csv output/ibovespa_performance.csv
 
 # Exibir em JSON
 python src/ibovespa_performance.py --json
+
+# Gerar gráfico com 10 ações (5 maiores altas e 5 maiores quedas) + Ibovespa
+python src/ibovespa_performance.py --plot-count 10 --no-show
 ```
+
+Quando `--plot-count` é informado, o script seleciona metade das ações entre as maiores valorizações e metade entre as maiores desvalorizações, sempre incluindo o próprio **Ibovespa**, e salva o gráfico em `output/ibovespa_performance_plot.html`.
 
 ### Notebook Jupyter
 
@@ -206,7 +211,7 @@ Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2
 - **Em S&P 500**
 - **Em Bitcoin**
 
-Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3, e `src/ibovespa_performance.py` gera o ranking de valorização/desvalorização desses componentes para um período configurável.
+Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3, e `src/ibovespa_performance.py` gera o ranking de valorização/desvalorização desses componentes para um período configurável, com opção de plotar as maiores altas, as maiores quedas e o **Ibovespa** em um gráfico interativo.
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
 
