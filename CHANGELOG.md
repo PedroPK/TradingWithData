@@ -7,6 +7,20 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ---
 
+## [Unreleased]
+
+### Adicionado
+- Novo script `src/ifix_components.py` para consultar os FIIs que compõem a carteira teórica atual do **IFIX** diretamente na B3
+- Função reutilizável `get_ifix_components()` e teste automatizado para a consulta do índice
+- Novo script `src/ifix_performance.py` para gerar ranking e gráfico dos FIIs do IFIX, incluindo a série histórica do próprio índice
+- Consulta da série diária do IFIX pelo símbolo `BMFBOVESPA:IFIX` no TradingView
+
+### Alterado
+- `README.md` atualizado com instruções para consultar e exportar a composição do IFIX
+- Funções de gráfico de desempenho parametrizadas para reutilização com outros índices
+
+---
+
 ## [1.6.0] - 2026-08-18
 
 ### Adicionado

@@ -73,6 +73,13 @@ def get_ibovespa_components(timeout: int = _DEFAULT_TIMEOUT) -> tuple[str, pd.Da
     return reference_date, portfolio_to_dataframe(payload)
 
 
+def get_ifix_components(timeout: int = _DEFAULT_TIMEOUT) -> tuple[str, pd.DataFrame]:
+    """Return the B3 reference date and current IFIX components."""
+    payload = fetch_index_portfolio(index="IFIX", timeout=timeout)
+    reference_date = payload["header"]["date"]
+    return reference_date, portfolio_to_dataframe(payload)
+
+
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Listar a composição atual do Ibovespa a partir da carteira teórica da B3.")
     parser.add_argument("--json", action="store_true", help="Exibe a saída em JSON.")

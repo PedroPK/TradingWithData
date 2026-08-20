@@ -122,12 +122,17 @@ def test_build_performance_figure_defaults_hover_to_named_percent_changes():
         {"Ibovespa": [100.0, 102.0], "AAA3 - Empresa A": [100.0, 95.0]},
         index=index,
     )
+    value_df = pd.DataFrame(
+        {"Ibovespa": [120000.0, 122400.0], "AAA3 - Empresa A": [10.0, 9.5]},
+        index=index,
+    )
 
     figure = ibovespa_performance.build_performance_figure(
         plot_df=plot_df,
         requested_start_date="2024-01-01",
         requested_end_date="2024-01-02",
         plot_count=2,
+        value_df=value_df,
     )
 
     assert figure.data[0].hovertemplate == "<b>Ibovespa</b>: %{text}<extra></extra>"
@@ -135,8 +140,9 @@ def test_build_performance_figure_defaults_hover_to_named_percent_changes():
     assert figure.data[0].text == ("+0.00%", "+2.00%")
     buttons = figure.layout.updatemenus[0].buttons
     assert figure.layout.updatemenus[0].active == 1
-    assert [button.label for button in buttons] == ["Pontos (base 100)", "Variação (%)"]
-    assert buttons[0].args[0]["text"][0] == ["100.00 pontos", "102.00 pontos"]
+    assert [button.label for button in buttons] == ["Valores (R$ / pontos)", "Variação (%)"]
+    assert buttons[0].args[0]["text"][0] == ["120000.00 pontos", "122400.00 pontos"]
+    assert buttons[0].args[0]["text"][1] == ["R$ 10,00", "R$ 9,50"]
 
 
 def test_export_performance_plot_sorts_hover_entries_by_cursor_value(tmp_path):

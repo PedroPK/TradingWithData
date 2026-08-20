@@ -135,8 +135,12 @@ def fetch_ibovespa_history(start_date: pd.Timestamp, end_date: pd.Timestamp) -> 
     return series
 
 
-def build_performance_dataframe(components: pd.DataFrame, price_history: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
-    """Build a sorted valuation/devaluation table for Ibovespa components."""
+def build_performance_dataframe(
+    components: pd.DataFrame,
+    price_history: pd.DataFrame,
+    index_name: str = "Ibovespa",
+) -> tuple[pd.DataFrame, list[str]]:
+    """Build a sorted valuation/devaluation table for index components."""
     component_lookup = components.set_index("ticker")
     rows: list[dict[str, Any]] = []
     missing_tickers: list[str] = []
@@ -172,7 +176,7 @@ def build_performance_dataframe(components: pd.DataFrame, price_history: pd.Data
         )
 
     if not rows:
-        raise ValueError("Nenhum componente do Ibovespa teve histórico disponível no período informado.")
+        raise ValueError(f"Nenhum componente do {index_name} teve histórico disponível no período informado.")
 
     performance_df = pd.DataFrame(rows).sort_values("return_percent", ascending=False, kind="stable").reset_index(drop=True)
     return performance_df, missing_tickers
@@ -206,20 +210,29 @@ def build_plot_dataframe(
     price_history: pd.DataFrame,
     ibovespa_history: pd.Series,
     plot_count: int,
+    index_name: str = "Ibovespa",
+    normalize: bool = True,
 ) -> pd.DataFrame:
-    """Build normalized time series for the selected performers plus Ibovespa."""
+    """Build selected performers plus the index, optionally normalized to base 100."""
     selected_tickers = select_plot_tickers(performance_df, plot_count)
     selected_history = price_history[selected_tickers].copy()
 
     plot_df = pd.DataFrame(index=selected_history.index.union(ibovespa_history.index).sort_values())
-    plot_df["Ibovespa"] = _normalize_series(ibovespa_history).reindex(plot_df.index)
+    index_series = _normalize_series(ibovespa_history) if normalize else ibovespa_history
+    plot_df[index_name] = index_series.reindex(plot_df.index)
 
     performance_lookup = performance_df.set_index("ticker")
     for ticker in selected_tickers:
         label = f"{ticker} - {performance_lookup.loc[ticker, 'company']}"
-        plot_df[label] = _normalize_series(selected_history[ticker]).reindex(plot_df.index)
+        series = _normalize_series(selected_history[ticker]) if normalize else selected_history[ticker]
+        plot_df[label] = series.reindex(plot_df.index)
 
     return plot_df.ffill().dropna(how="all")
+
+
+def _format_brl(value: float) -> str:
+    """Format a price in Brazilian real notation."""
+    return f"R$ {value:,.2f}".translate(str.maketrans({",": ".", ".": ","}))
 
 
 def build_performance_figure(
@@ -227,19 +240,30 @@ def build_performance_figure(
     requested_start_date: str,
     requested_end_date: str,
     plot_count: int,
+    index_name: str = "Ibovespa",
+    value_df: pd.DataFrame | None = None,
 ) -> go.Figure:
     """Create the performance comparison figure."""
+    if value_df is not None:
+        if not plot_df.columns.equals(value_df.columns):
+            raise ValueError("As séries de valores devem ter as mesmas colunas das séries normalizadas.")
+        value_df = value_df.reindex(plot_df.index)
+
     fig = go.Figure()
     hover_templates: list[str] = []
-    hover_texts = {"points": [], "percent": []}
+    hover_texts = {"values": [], "percent": []}
 
     for column in plot_df.columns:
         trace_kwargs: dict[str, Any] = {}
-        if column == "Ibovespa":
+        if column == index_name:
             trace_kwargs["line"] = dict(color="black", width=3)
 
         hover_templates.append(f"<b>{column}</b>: %{{text}}<extra></extra>")
-        hover_texts["points"].append(plot_df[column].map(lambda value: f"{value:.2f} pontos").tolist())
+        display_values = value_df[column] if value_df is not None else plot_df[column]
+        if column == index_name:
+            hover_texts["values"].append(display_values.map(lambda value: f"{value:.2f} pontos").tolist())
+        else:
+            hover_texts["values"].append(display_values.map(_format_brl).tolist())
         hover_texts["percent"].append(((plot_df[column] - 100).map(lambda value: f"{value:+.2f}%")).tolist())
 
         fig.add_trace(
@@ -257,7 +281,7 @@ def build_performance_figure(
     fig.update_layout(
         title=dict(
             text=(
-                "Evolução normalizada dos componentes selecionados do Ibovespa "
+                f"Evolução normalizada dos componentes selecionados do {index_name} "
                 f"({requested_start_date} a {requested_end_date}, base 100, {plot_count} ações)"
             ),
             x=0.5,
@@ -281,9 +305,9 @@ def build_performance_figure(
                 yanchor="top",
                 buttons=[
                     dict(
-                        label="Pontos (base 100)",
+                        label="Valores (R$ / pontos)",
                         method="restyle",
-                        args=[{"text": hover_texts["points"], "hovertemplate": hover_templates}],
+                        args=[{"text": hover_texts["values"], "hovertemplate": hover_templates}],
                     ),
                     dict(
                         label="Variação (%)",
@@ -298,10 +322,15 @@ def build_performance_figure(
     return fig
 
 
-def export_performance_plot(fig: go.Figure, output_dir: str, show_browser: bool) -> str:
+def export_performance_plot(
+    fig: go.Figure,
+    output_dir: str,
+    show_browser: bool,
+    filename: str = _DEFAULT_PLOT_HTML,
+) -> str:
     """Export the selected performance chart to HTML."""
     os.makedirs(output_dir, exist_ok=True)
-    html_path = os.path.join(output_dir, _DEFAULT_PLOT_HTML)
+    html_path = os.path.join(output_dir, filename)
     fig.write_html(
         html_path,
         include_plotlyjs="cdn",
@@ -394,11 +423,19 @@ def main() -> None:
             ibovespa_history=ibovespa_history,
             plot_count=args.plot_count,
         )
+        value_df = build_plot_dataframe(
+            performance_df=performance_df,
+            price_history=result["price_history"],
+            ibovespa_history=ibovespa_history,
+            plot_count=args.plot_count,
+            normalize=False,
+        )
         fig = build_performance_figure(
             plot_df=plot_df,
             requested_start_date=result["requested_start_date"],
             requested_end_date=result["requested_end_date"],
             plot_count=min(args.plot_count, len(performance_df)),
+            value_df=value_df,
         )
         plot_path = export_performance_plot(fig, args.output_dir, show_browser)
         output_messages.append(f"Gráfico HTML salvo em: {plot_path}")

@@ -73,3 +73,19 @@ def test_portfolio_to_dataframe_normalizes_b3_payload():
 def test_portfolio_to_dataframe_rejects_empty_results():
     with pytest.raises(ValueError, match="não retornou componentes"):
         ibovespa_components.portfolio_to_dataframe({"results": []})
+
+
+def test_get_ifix_components_requests_ifix_portfolio(monkeypatch):
+    requested_indexes = []
+
+    def fetch_portfolio(index, timeout):
+        requested_indexes.append((index, timeout))
+        return _sample_payload()
+
+    monkeypatch.setattr(ibovespa_components, "fetch_index_portfolio", fetch_portfolio)
+
+    reference_date, components = ibovespa_components.get_ifix_components(timeout=15)
+
+    assert requested_indexes == [("IFIX", 15)]
+    assert reference_date == "18/08/26"
+    assert components["ticker"].tolist() == ["ABEV3", "B3SA3"]

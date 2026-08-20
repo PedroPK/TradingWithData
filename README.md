@@ -89,6 +89,24 @@ python src/ibovespa_components.py --csv output/ibovespa_components.csv
 python src/ibovespa_components.py --json
 ```
 
+### Listar os FIIs que compõem o IFIX
+
+Para consultar a carteira teórica atual do Índice de Fundos de Investimentos Imobiliários (IFIX), direto da B3:
+
+```bash
+python src/ifix_components.py
+```
+
+Opções úteis:
+
+```bash
+# Salvar a composição em CSV
+python src/ifix_components.py --csv output/ifix_components.csv
+
+# Exibir em JSON
+python src/ifix_components.py --json
+```
+
 ### Ranking de valorização/desvalorização dos componentes
 
 Para gerar uma tabela ordenada do ativo mais valorizado para o menos valorizado, usando por padrão o período de hoje até 4 anos atrás:
@@ -117,7 +135,23 @@ python src/ibovespa_performance.py --plot-count 10 --no-show
 ```
 
 Quando `--plot-count` é informado, o script seleciona metade das ações entre as maiores valorizações e metade entre as maiores desvalorizações, sempre incluindo o próprio **Ibovespa**, e salva o gráfico em `output/ibovespa_performance_plot.html`.
-No painel exibido ao passar o mouse, a variação percentual em relação ao início do período é exibida por padrão. Use o botão **Pontos (base 100)** para alternar para os valores normalizados.
+No painel exibido ao passar o mouse, a variação percentual em relação ao início do período é exibida por padrão. Use o botão **Valores (R$ / pontos)** para ver as cotações em reais dos ativos e a cotação do índice em pontos.
+
+### Ranking e gráfico dos componentes do IFIX
+
+O mesmo ranking e gráfico estão disponíveis para os FIIs da carteira atual do IFIX:
+
+```bash
+python src/ifix_performance.py
+```
+
+Para gerar um gráfico com `N` FIIs - divididos entre as maiores altas e as maiores quedas - mais a série do próprio **IFIX**:
+
+```bash
+python src/ifix_performance.py --plot-count 10 --no-show
+```
+
+O gráfico é salvo em `output/ifix_performance_plot.html`. No botão **Valores (R$ / pontos)**, as cotas dos FIIs são exibidas em reais e o IFIX permanece em pontos, que é sua unidade de cotação. As opções `--years`, `--start-date`, `--end-date`, `--csv` e `--json` funcionam da mesma forma que no comando do Ibovespa.
 
 ### Notebook Jupyter
 
@@ -189,7 +223,9 @@ TradingWithData/
 │   └── index.html            # Gráfico interativo (GitHub Pages)
 ├── src/
 │   ├── ibovespa_components.py # Consulta da composição atual do Ibovespa
+│   ├── ifix_components.py     # Consulta da composição atual do IFIX
 │   ├── ibovespa_performance.py # Ranking de valorização/desvalorização dos componentes
+│   ├── ifix_performance.py    # Ranking e gráfico dos componentes do IFIX
 │   └── index_comparator.py    # Script principal
 ├── output/
 │   └── ibovespa_comparativo.png  # Imagem gerada na última execução
@@ -213,6 +249,7 @@ Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2
 - **Em Bitcoin**
 
 Além disso, o script `src/ibovespa_components.py` lista os ativos que compõem a carteira teórica atual do índice na data retornada pela B3, e `src/ibovespa_performance.py` gera o ranking de valorização/desvalorização desses componentes para um período configurável, com opção de plotar as maiores altas, as maiores quedas e o **Ibovespa** em um gráfico interativo.
+Os scripts `src/ifix_components.py` e `src/ifix_performance.py` oferecem a mesma consulta e visualização para os FIIs da carteira teórica atual do **IFIX**.
 
 O eixo Y usa escala logarítmica para facilitar a comparação entre ativos de magnitudes muito diferentes.
 
