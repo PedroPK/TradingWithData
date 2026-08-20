@@ -136,6 +136,7 @@ python src/ibovespa_performance.py --plot-count 10 --no-show
 
 Quando `--plot-count` é informado, o script seleciona metade das ações entre as maiores valorizações e metade entre as maiores desvalorizações, sempre incluindo o próprio **Ibovespa**, e salva o gráfico em `output/ibovespa_performance_plot.html`.
 No painel exibido ao passar o mouse, a variação percentual em relação ao início do período é exibida por padrão. Use o botão **Valores (R$ / pontos)** para ver as cotações em reais dos ativos e a cotação do índice em pontos.
+As cotações dos ativos usam o preço de fechamento sem ajuste do Yahoo Finance, para corresponder à trajetória de preços de mercado.
 
 ### Ranking e gráfico dos componentes do IFIX
 

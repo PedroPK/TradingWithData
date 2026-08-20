@@ -107,13 +107,13 @@ def fetch_price_history(
     start_date: pd.Timestamp,
     end_date: pd.Timestamp,
 ) -> pd.DataFrame:
-    """Fetch adjusted close prices for the requested analysis period."""
+    """Fetch unadjusted closing prices for the requested analysis period."""
     yahoo_tickers = _to_yfinance_tickers(tickers)
     raw_prices = yf.download(
         yahoo_tickers,
         start=start_date.strftime("%Y-%m-%d"),
         end=(end_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
-        auto_adjust=True,
+        auto_adjust=False,
         progress=False,
     )
     return extract_close_prices(raw_prices, yahoo_tickers)

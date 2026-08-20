@@ -22,6 +22,31 @@ def test_extract_close_prices_normalizes_multiindex_columns():
     assert close_prices.loc[pd.Timestamp("2024-01-02"), "VALE3"] == pytest.approx(55.0)
 
 
+def test_fetch_price_history_uses_unadjusted_closing_prices(monkeypatch):
+    captured_kwargs = {}
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    raw_prices = pd.DataFrame(
+        [[10.0], [11.0]],
+        index=index,
+        columns=pd.MultiIndex.from_product([["Close"], ["XPML11.SA"]]),
+    )
+
+    def fake_download(*args, **kwargs):
+        captured_kwargs.update(kwargs)
+        return raw_prices
+
+    monkeypatch.setattr(ibovespa_performance.yf, "download", fake_download)
+
+    prices = ibovespa_performance.fetch_price_history(
+        pd.Series(["XPML11"]),
+        pd.Timestamp("2024-01-01"),
+        pd.Timestamp("2024-01-02"),
+    )
+
+    assert captured_kwargs["auto_adjust"] is False
+    assert prices["XPML11"].tolist() == [10.0, 11.0]
+
+
 def test_build_performance_dataframe_sorts_from_best_to_worst():
     components = pd.DataFrame(
         [
