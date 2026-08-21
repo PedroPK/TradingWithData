@@ -1,0 +1,18 @@
+services:
+  web:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      CADDY_SITE: ${CADDY_SITE:?Configure CADDY_SITE with the application's domain.}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docs:/srv:ro
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

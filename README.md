@@ -214,6 +214,34 @@ Para ativar o GitHub Pages no seu repositório:
 
 ---
 
+## Deploy em VPS
+
+O repositório inclui infraestrutura como código em `infrastructure/ansible/` para publicar o conteúdo estático de `docs/` em uma VPS **Ubuntu**. O playbook instala Docker e Docker Compose, baixa a revisão escolhida do repositório e inicia o Caddy, que fornece HTTPS automático para o domínio configurado.
+
+Pré-requisitos:
+
+- Uma VPS Ubuntu (amd64 ou arm64) acessível por SSH, com as portas TCP **80** e **443** liberadas.
+- Um domínio com registro A/AAAA apontando para o IP da VPS. O DNS deve estar propagado antes do deploy para a emissão do certificado TLS.
+- Ansible instalado na máquina que executará o deploy.
+
+Configure o inventário sem versionar credenciais:
+
+```bash
+cp infrastructure/ansible/inventory.yml.example infrastructure/ansible/inventory.yml
+```
+
+Edite `infrastructure/ansible/inventory.yml`, informando IP, usuário SSH, chave privada, domínio e repositório. Depois execute:
+
+```bash
+ansible-playbook -i infrastructure/ansible/inventory.yml infrastructure/ansible/deploy.yml
+```
+
+O deploy usa `app_version: main` por padrão; altere esse valor para uma tag ou commit específico quando quiser uma versão imutável. Para atualizar a VPS após uma nova versão, execute novamente o mesmo comando. O diretório da aplicação na VPS é `/opt/trading-with-data`.
+
+> O domínio é gravado localmente na VPS em `/opt/trading-with-data/.env` e não deve ser adicionado ao repositório. Para servir apenas em rede privada ou sem domínio, adapte `infrastructure/caddy/Caddyfile` antes do primeiro deploy.
+
+---
+
 ## Estrutura do Projeto
 
 ```
@@ -221,6 +249,10 @@ TradingWithData/
 ├── .github/
 │   └── workflows/
 │       └── update_chart.yml  # GitHub Actions — atualização semanal automática
+├── infrastructure/
+│   ├── ansible/              # Provisionamento e deploy da VPS
+│   └── caddy/                # Configuração HTTPS do servidor web
+├── compose.yml               # Serviço web executado na VPS
 ├── docs/
 │   └── index.html            # Gráfico interativo (GitHub Pages)
 ├── src/

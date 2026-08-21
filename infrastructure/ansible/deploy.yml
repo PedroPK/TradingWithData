@@ -1,0 +1,115 @@
+---
+- name: Deploy Trading with Data on an Ubuntu VPS
+  hosts: trading_with_data
+  become: true
+  gather_facts: true
+
+  vars:
+    app_name: trading-with-data
+    app_path: /opt/trading-with-data
+    docker_apt_architecture:
+      x86_64: amd64
+      aarch64: arm64
+
+  pre_tasks:
+    - name: Validate the target operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_architecture in docker_apt_architecture
+        fail_msg: This playbook supports Ubuntu VPS instances with amd64 or arm64 CPUs.
+
+    - name: Validate deployment variables
+      ansible.builtin.assert:
+        that:
+          - app_domain is defined
+          - app_domain | length > 0
+          - app_repository is defined
+          - app_repository | length > 0
+        fail_msg: Define app_domain and app_repository in the inventory.
+
+  tasks:
+    - name: Install Docker repository prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - git
+        state: present
+        update_cache: true
+
+    - name: Create Docker keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Install Docker repository signing key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Configure Docker apt repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ docker_apt_architecture[ansible_architecture] }}
+          signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/ubuntu
+          {{ ansible_distribution_release }} stable
+        filename: docker
+        state: present
+
+    - name: Install Docker Engine and Compose plugin
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker is running
+      ansible.builtin.systemd_service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check out the application revision
+      ansible.builtin.git:
+        repo: "{{ app_repository }}"
+        dest: "{{ app_path }}"
+        version: "{{ app_version | default('main') }}"
+        force: true
+        single_branch: true
+
+    - name: Configure the public domain
+      ansible.builtin.copy:
+        content: "CADDY_SITE={{ app_domain }}\n"
+        dest: "{{ app_path }}/.env"
+        mode: "0600"
+
+    - name: Start the web service
+      ansible.builtin.command:
+        cmd: docker compose --project-name {{ app_name }} --env-file .env up --detach --pull always --remove-orphans
+        chdir: "{{ app_path }}"
+      changed_when: true
+
+    - name: Verify the deployed site responds locally
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        headers:
+          Host: "{{ app_domain }}"
+        status_code: 200
+      register: deployed_site
+      retries: 6
+      delay: 5
+      until: deployed_site.status == 200
