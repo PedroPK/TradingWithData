@@ -114,7 +114,12 @@ def get_ifix_performance(
     """Fetch current IFIX components and compute their performance ranking."""
     resolved_start, resolved_end = resolve_period(start_date=start_date, end_date=end_date, years=years)
     reference_date, components = get_ifix_components(timeout=timeout)
-    price_history = fetch_price_history(components["ticker"], resolved_start, resolved_end)
+    price_history = fetch_price_history(
+        components["ticker"],
+        resolved_start,
+        resolved_end,
+        adjust_for_dividends=True,
+    )
     performance_df, missing_tickers = build_performance_dataframe(components, price_history, index_name="IFIX")
     return {
         "reference_date": reference_date,
@@ -192,6 +197,7 @@ def main() -> None:
             plot_count=min(args.plot_count, len(performance_df)),
             index_name="IFIX",
             value_df=value_df,
+            values_button_label="Valores com rendimentos (R$ / pontos)",
         )
         plot_path = export_performance_plot(
             figure,

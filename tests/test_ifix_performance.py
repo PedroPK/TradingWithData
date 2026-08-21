@@ -7,6 +7,33 @@ from src import ifix_performance
 from src import ibovespa_performance
 
 
+def test_get_ifix_performance_uses_prices_adjusted_for_dividends(monkeypatch):
+    captured_kwargs = {}
+    components = pd.DataFrame(
+        [{"ticker": "XPML11", "company": "FII XPML", "share_type": "FII", "weight_percent": 1.0}]
+    )
+    history = pd.DataFrame(
+        {"XPML11": [100.0, 110.0]},
+        index=pd.date_range("2026-08-17", periods=2, freq="D"),
+    )
+
+    monkeypatch.setattr(ifix_performance, "get_ifix_components", lambda timeout: ("18/08/26", components))
+
+    def fake_fetch_price_history(*args, **kwargs):
+        captured_kwargs.update(kwargs)
+        return history
+
+    monkeypatch.setattr(ifix_performance, "fetch_price_history", fake_fetch_price_history)
+
+    result = ifix_performance.get_ifix_performance(
+        start_date="2026-08-17",
+        end_date="2026-08-18",
+    )
+
+    assert captured_kwargs["adjust_for_dividends"] is True
+    assert result["performance"].loc[0, "return_percent"] == pytest.approx(10.0)
+
+
 def test_decode_tradingview_messages_extracts_timescale_update():
     payload = {
         "m": "timescale_update",

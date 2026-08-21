@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import warnings
 from typing import Any
 
 import pandas as pd
@@ -102,21 +103,107 @@ def extract_close_prices(price_data: pd.DataFrame, requested_tickers: list[str])
     return close_prices
 
 
+def _extract_price_field(
+    price_data: pd.DataFrame,
+    field_name: str,
+    requested_tickers: list[str],
+) -> pd.DataFrame:
+    """Extract a Yahoo Finance price-data field, defaulting absent fields to zero."""
+    if isinstance(price_data.columns, pd.MultiIndex) and field_name in price_data.columns.get_level_values(0):
+        values = price_data[field_name].copy()
+    elif field_name in price_data.columns:
+        values = price_data[[field_name]].copy()
+        values.columns = requested_tickers
+    else:
+        values = pd.DataFrame(0.0, index=price_data.index, columns=requested_tickers)
+
+    values.columns = [ticker.removesuffix(".SA") for ticker in values.columns]
+    return values
+
+
+def build_total_return_prices(
+    close_prices: pd.DataFrame,
+    dividends: pd.DataFrame,
+) -> pd.DataFrame:
+    """Build price-equivalent total-return series from split-adjusted closes and cash distributions."""
+    total_return_prices = close_prices.copy()
+
+    for ticker in close_prices:
+        closes = close_prices[ticker].ffill()
+        daily_returns = (closes + dividends[ticker].fillna(0)).div(closes.shift())
+        daily_returns.iloc[0] = 1
+        total_return_prices[ticker] = daily_returns.cumprod() * closes.iloc[0]
+
+    return total_return_prices
+
+
+def remove_transient_unrecorded_price_spikes(
+    close_prices: pd.DataFrame,
+    stock_splits: pd.DataFrame,
+) -> pd.DataFrame:
+    """Remove temporary price spikes that Yahoo Finance does not associate with a corporate action."""
+    sanitized_prices = close_prices.copy()
+
+    for ticker in close_prices:
+        closes = close_prices[ticker]
+        split_factors = stock_splits[ticker].replace(0, 1).fillna(1)
+        daily_returns = closes.div(closes.shift()) - 1
+
+        for position in range(1, len(closes)):
+            if split_factors.iloc[position] != 1 or abs(daily_returns.iloc[position]) <= 0.5:
+                continue
+
+            baseline = closes.iloc[position - 1]
+            recovery_position = next(
+                (
+                    candidate
+                    for candidate in range(position + 1, min(position + 6, len(closes)))
+                    if split_factors.iloc[candidate] == 1
+                    and abs((closes.iloc[candidate] / baseline) - 1) <= 0.1
+                ),
+                None,
+            )
+            if recovery_position is None:
+                continue
+
+            sanitized_prices.iloc[position:recovery_position, sanitized_prices.columns.get_loc(ticker)] = float("nan")
+            warnings.warn(
+                (
+                    f"O Yahoo Finance retornou cotações temporariamente inconsistentes para {ticker} "
+                    f"entre {closes.index[position]:%Y-%m-%d} e {closes.index[recovery_position - 1]:%Y-%m-%d}; "
+                    "esses valores foram ignorados no cálculo de retorno total."
+                ),
+                RuntimeWarning,
+                stacklevel=2,
+            )
+
+    return sanitized_prices
+
+
 def fetch_price_history(
     tickers: pd.Series,
     start_date: pd.Timestamp,
     end_date: pd.Timestamp,
+    adjust_for_dividends: bool = False,
 ) -> pd.DataFrame:
-    """Fetch unadjusted closing prices for the requested analysis period."""
+    """Fetch closing prices, optionally converted into total-return series."""
     yahoo_tickers = _to_yfinance_tickers(tickers)
     raw_prices = yf.download(
         yahoo_tickers,
         start=start_date.strftime("%Y-%m-%d"),
         end=(end_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
         auto_adjust=False,
+        actions=adjust_for_dividends,
         progress=False,
     )
-    return extract_close_prices(raw_prices, yahoo_tickers)
+    close_prices = extract_close_prices(raw_prices, yahoo_tickers)
+    if not adjust_for_dividends:
+        return close_prices
+
+    dividends = _extract_price_field(raw_prices, "Dividends", yahoo_tickers)
+    stock_splits = _extract_price_field(raw_prices, "Stock Splits", yahoo_tickers)
+    sanitized_prices = remove_transient_unrecorded_price_spikes(close_prices, stock_splits)
+    return build_total_return_prices(sanitized_prices, dividends)
 
 
 def fetch_ibovespa_history(start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.Series:
@@ -242,6 +329,7 @@ def build_performance_figure(
     plot_count: int,
     index_name: str = "Ibovespa",
     value_df: pd.DataFrame | None = None,
+    values_button_label: str = "Valores (R$ / pontos)",
 ) -> go.Figure:
     """Create the performance comparison figure."""
     if value_df is not None:
@@ -305,7 +393,7 @@ def build_performance_figure(
                 yanchor="top",
                 buttons=[
                     dict(
-                        label="Valores (R$ / pontos)",
+                        label=values_button_label,
                         method="restyle",
                         args=[{"text": hover_texts["values"], "hovertemplate": hover_templates}],
                     ),

@@ -47,6 +47,57 @@ def test_fetch_price_history_uses_unadjusted_closing_prices(monkeypatch):
     assert prices["XPML11"].tolist() == [10.0, 11.0]
 
 
+def test_fetch_price_history_can_build_total_return_prices(monkeypatch):
+    captured_kwargs = {}
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    raw_prices = pd.DataFrame(
+        [[100.0, 0.0, 0.0], [99.0, 2.0, 0.0], [105.0, 0.0, 0.0]],
+        index=index,
+        columns=pd.MultiIndex.from_tuples(
+            [("Close", "XPML11.SA"), ("Dividends", "XPML11.SA"), ("Stock Splits", "XPML11.SA")]
+        ),
+    )
+
+    def fake_download(*args, **kwargs):
+        captured_kwargs.update(kwargs)
+        return raw_prices
+
+    monkeypatch.setattr(ibovespa_performance.yf, "download", fake_download)
+
+    prices = ibovespa_performance.fetch_price_history(
+        pd.Series(["XPML11"]),
+        pd.Timestamp("2024-01-01"),
+        pd.Timestamp("2024-01-02"),
+        adjust_for_dividends=True,
+    )
+
+    assert captured_kwargs["auto_adjust"] is False
+    assert captured_kwargs["actions"] is True
+    assert prices["XPML11"].tolist() == pytest.approx([100.0, 101.0, 107.121212])
+
+
+def test_build_total_return_prices_uses_split_adjusted_yahoo_closes():
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    close_prices = pd.DataFrame({"VGIR11": [10.0, 10.0]}, index=index)
+    dividends = pd.DataFrame({"VGIR11": [0.0, 0.0]}, index=index)
+
+    prices = ibovespa_performance.build_total_return_prices(close_prices, dividends)
+
+    assert prices["VGIR11"].tolist() == pytest.approx([10.0, 10.0])
+
+
+def test_remove_transient_unrecorded_price_spikes_warns_and_removes_bad_quotes():
+    index = pd.date_range("2026-01-13", periods=5, freq="D")
+    close_prices = pd.DataFrame({"XPML11": [110.0, 1.07, 1.06, 1.06, 109.5]}, index=index)
+    stock_splits = pd.DataFrame({"XPML11": [0.0, 0.0, 0.0, 0.0, 0.0]}, index=index)
+
+    with pytest.warns(RuntimeWarning, match="XPML11"):
+        prices = ibovespa_performance.remove_transient_unrecorded_price_spikes(close_prices, stock_splits)
+
+    assert prices["XPML11"].iloc[[0, -1]].tolist() == pytest.approx([110.0, 109.5])
+    assert prices["XPML11"].iloc[1:4].isna().all()
+
+
 def test_build_performance_dataframe_sorts_from_best_to_worst():
     components = pd.DataFrame(
         [

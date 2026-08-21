@@ -152,7 +152,8 @@ Para gerar um gráfico com `N` FIIs - divididos entre as maiores altas e as maio
 python src/ifix_performance.py --plot-count 10 --no-show
 ```
 
-O gráfico é salvo em `output/ifix_performance_plot.html`. No botão **Valores (R$ / pontos)**, as cotas dos FIIs são exibidas em reais e o IFIX permanece em pontos, que é sua unidade de cotação. As opções `--years`, `--start-date`, `--end-date`, `--csv` e `--json` funcionam da mesma forma que no comando do Ibovespa.
+O gráfico é salvo em `output/ifix_performance_plot.html`. No botão **Valores com rendimentos (R$ / pontos)**, as cotas dos FIIs são exibidas em reais e o IFIX permanece em pontos, que é sua unidade de cotação. As opções `--years`, `--start-date`, `--end-date`, `--csv` e `--json` funcionam da mesma forma que no comando do Ibovespa.
+As séries dos FIIs combinam os fechamentos brutos com os rendimentos e eventos societários informados pelo Yahoo Finance, para que sua variação represente o retorno total, assim como o IFIX. Isso evita depender do `Adjusted Close` do provedor.
 
 ### Notebook Jupyter
 
