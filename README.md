@@ -1,6 +1,6 @@
 # Trading with Data
 
-Comparativo do índice iBovespa, medido em **Reais nominais**, com outros índices financeiros, tais como o **IPCA**, convertido para **Dólar**, ajustado ao **Ouro** e **Bitcoin** (este último com dados históricos desde 2010).
+Comparativo do índice iBovespa, medido em **Reais nominais**, com outros índices financeiros, tais como o **IPCA**, convertido para **Dólar** e para o **Dollar Index** (cesta global de moedas), ajustado ao **Ouro** e **Bitcoin** (este último com dados históricos desde 2010).
 
 > Veja o [CHANGELOG](CHANGELOG.md) para o histórico de versões.
 
@@ -64,9 +64,9 @@ python src/index_comparator.py
 ```
 
 O script irá:
-1. Baixar cotações históricas do Ibovespa, USD/BRL, BTC/USD, Ouro Futuro e S&P 500 (via yfinance)
+1. Baixar cotações históricas do Ibovespa, USD/BRL, Dollar Index (DXY), BTC/USD, Ouro Futuro e S&P 500 (via yfinance)
 2. Buscar o IPCA mensal histórico via SIDRA/IBGE
-3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, ouro, S&P 500 e bitcoin)
+3. Calcular o Ibovespa em cada perspectiva (nominal, real, dólar, Dollar Index, ouro, S&P 500 e bitcoin)
 4. Salvar o gráfico interativo como HTML em `docs/index.html` (publicado no GitHub Pages)
 5. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
 6. Abrir o gráfico interativo no seu navegador padrão (apenas localmente).
@@ -273,11 +273,12 @@ TradingWithData/
 
 ## Resultado Esperado
 
-Um gráfico interativo (abre no navegador) com seis curvas normalizadas, desde 2010:
+Um gráfico interativo (abre no navegador) com sete curvas normalizadas, desde 2010:
 
 - **Ibovespa Nominal (R$)**
 - **Corrigido pelo IPCA**
-- **Em Dólar (USD)**
+- **Em Dólar (USD/BRL)** — o índice em dólares, pela cotação do real
+- **Em Dollar Index** — o mesmo valor em dólares ajustado pelo DXY, a cesta do dólar contra euro, iene, libra, dólar canadense, coroa sueca e franco suíço
 - **Em Ouro**
 - **Em S&P 500**
 - **Em Bitcoin**

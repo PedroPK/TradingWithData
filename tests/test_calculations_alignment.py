@@ -27,6 +27,7 @@ def test_build_comparison_dataframe_alignment_and_expected_values(deterministic_
     assert pd.Timestamp("2020-01-03") not in df.index
     assert df.loc["2020-01-01", "Ibovespa_Real"] == pytest.approx(100000 / 1.0075125)
     assert df.loc["2020-01-01", "Ibovespa_USD"] == pytest.approx(25000.0)
+    assert df.loc["2020-01-01", "Ibovespa_DXY"] == pytest.approx(25000.0 * 96.0)
     assert df.loc["2020-01-01", "Ibovespa_Gold"] == pytest.approx((100000 / 4.0) / 1500.0)
 
 
@@ -64,6 +65,7 @@ def test_build_normalized_dataframe_outputs_expected_shape(deterministic_prices_
         "Ibovespa",
         "Ibovespa_Real",
         "Ibovespa_USD",
+        "Ibovespa_DXY",
         "Ibovespa_BTC",
         "Ibovespa_Gold",
         "Ibovespa_SP500",

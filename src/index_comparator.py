@@ -14,7 +14,7 @@ _IBGE_MAX_RETRIES = 5
 _IBGE_BACKOFF_BASE = 2   # seconds
 _IBGE_MAX_WAIT = 32      # seconds (cap to prevent unbounded wait times)
 _DEFAULT_START_DATE = '2010-01-01'
-_DEFAULT_TICKERS = ['^BVSP', 'USDBRL=X', 'BTC-USD', 'GC=F', '^GSPC']
+_DEFAULT_TICKERS = ['^BVSP', 'USDBRL=X', 'BTC-USD', 'GC=F', '^GSPC', 'DX-Y.NYB']
 
 
 def _fetch_ipca():
@@ -66,7 +66,8 @@ def get_price_data(start_date=_DEFAULT_START_DATE, tickers=None):
         'USDBRL=X': 'USD/BRL',
         'BTC-USD': 'BTC/USD',
         'GC=F': 'Gold_USD',
-        '^GSPC': 'SP500_USD'
+        '^GSPC': 'SP500_USD',
+        'DX-Y.NYB': 'DXY'
     })
     df_prices = df_prices.dropna(subset=['Ibovespa'])
     return df_prices
@@ -108,6 +109,10 @@ def build_comparison_dataframe(df_prices, ipca_daily):
 
     df['Ibovespa_Real'] = df['Ibovespa'] / df['ipca_factor']
     df['Ibovespa_USD'] = df['Ibovespa'] / df['USD/BRL']
+    # DXY sobe quando o dólar ganha da cesta global. Multiplicar o Ibovespa em USD
+    # pelo índice converte a série para essa cesta: um dólar mais forte no mundo
+    # não é tratado como perda do real.
+    df['Ibovespa_DXY'] = df['Ibovespa_USD'] * df['DXY']
     df['Ibovespa_BTC'] = df['Ibovespa_USD'] / df['BTC/USD']
     df['Ibovespa_Gold'] = df['Ibovespa_USD'] / df['Gold_USD']
     df['Ibovespa_SP500'] = df['Ibovespa_USD'] / df['SP500_USD']
@@ -135,6 +140,7 @@ def build_normalized_dataframe(df):
     df_norm['Ibovespa'] = df['Ibovespa'] / base_ibov
     df_norm['Ibovespa_Real'] = normalize_aligned(df['Ibovespa_Real'], df['Ibovespa'], base_ibov)
     df_norm['Ibovespa_USD'] = normalize_aligned(df['Ibovespa_USD'], df['Ibovespa'], base_ibov)
+    df_norm['Ibovespa_DXY'] = normalize_aligned(df['Ibovespa_DXY'], df['Ibovespa'], base_ibov)
     df_norm['Ibovespa_BTC'] = normalize_aligned(df['Ibovespa_BTC'], df['Ibovespa'], base_ibov)
     df_norm['Ibovespa_Gold'] = normalize_aligned(df['Ibovespa_Gold'], df['Ibovespa'], base_ibov)
     df_norm['Ibovespa_SP500'] = normalize_aligned(df['Ibovespa_SP500'], df['Ibovespa'], base_ibov)
@@ -168,6 +174,13 @@ def build_figure(df_norm, base_ibov):
     ))
     fig.add_trace(go.Scatter(
         x=df_norm.index,
+        y=df_norm['Ibovespa_DXY'] * base_ibov,
+        mode='lines',
+        name='Em Dollar Index',
+        line=dict(color='#E10098')
+    ))
+    fig.add_trace(go.Scatter(
+        x=df_norm.index,
         y=df_norm['Ibovespa_Gold'] * base_ibov,
         mode='lines',
         name='Em Ouro',
@@ -189,7 +202,7 @@ def build_figure(df_norm, base_ibov):
     ))
 
     fig.update_layout(
-        title='Ibovespa vs Indexadores: Inflação, Dólar, S&P 500, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
+        title='Ibovespa vs Indexadores: Inflação, Dólar, Dollar Index, S&P 500, Ouro e Bitcoin (Normalizado e em escala logarítmica)',
         xaxis_title='Anos',
         yaxis_title='Pontuação Ajustada (Escala Logarítmica Recomendada)',
         yaxis_tickformat=',.0f',
@@ -248,7 +261,7 @@ def run_pipeline(start_date=_DEFAULT_START_DATE, root_dir=None, docs_dir=None, o
 
 
 def _build_arg_parser():
-    parser = argparse.ArgumentParser(description='Gerar comparativo do Ibovespa com IPCA, dólar, ouro, S&P 500 e bitcoin.')
+    parser = argparse.ArgumentParser(description='Gerar comparativo do Ibovespa com IPCA, dólar, Dollar Index, ouro, S&P 500 e bitcoin.')
     parser.add_argument('--start-date', default=_DEFAULT_START_DATE, help='Data inicial para download do histórico (formato YYYY-MM-DD).')
     parser.add_argument('--root-dir', default=None, help='Diretório raiz para resolução de docs/ e output/.')
     parser.add_argument('--docs-dir', default=None, help='Diretório de saída para o HTML interativo.')

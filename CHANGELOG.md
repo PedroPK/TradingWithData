@@ -10,6 +10,7 @@ e este projeto segue [Semantic Versioning](https://semver.org/lang/pt-BR/).
 ## [Unreleased]
 
 ### Adicionado
+- Série **Em Dollar Index** no comparativo do Ibovespa, usando o DXY (`DX-Y.NYB`) para medir o índice contra a cesta global de moedas, além do dólar/real
 - Novo script `src/ifix_components.py` para consultar os FIIs que compõem a carteira teórica atual do **IFIX** diretamente na B3
 - Função reutilizável `get_ifix_components()` e teste automatizado para a consulta do índice
 - Novo script `src/ifix_performance.py` para gerar ranking e gráfico dos FIIs do IFIX, incluindo a série histórica do próprio índice

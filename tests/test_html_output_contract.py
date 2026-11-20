@@ -25,6 +25,7 @@ def test_html_contains_all_expected_series(monkeypatch, tmp_path, deterministic_
     expected_series = [
         "Ibovespa Nominal (R$)",
         "Corrigido pelo IPCA",
+        "Em Dollar Index",
         "Em Ouro",
         "Em S&P 500",
         "Em Bitcoin",
@@ -44,18 +45,19 @@ def test_html_contains_key_layout_contract(monkeypatch, tmp_path, deterministic_
     assert '"hovermode":"x unified"' in html
 
 
-def test_figure_contract_has_six_traces_and_log_axis(deterministic_prices_df, deterministic_ipca_payload):
+def test_figure_contract_has_seven_traces_and_log_axis(deterministic_prices_df, deterministic_ipca_payload):
     ipca_daily = comparator.build_ipca_daily(deterministic_ipca_payload)
     df = comparator.build_comparison_dataframe(deterministic_prices_df, ipca_daily)
     df_norm, base_ibov = comparator.build_normalized_dataframe(df)
     fig = comparator.build_figure(df_norm, base_ibov)
 
-    assert len(fig.data) == 6
+    assert len(fig.data) == 7
     names = {trace.name for trace in fig.data}
     assert names == {
         "Ibovespa Nominal (R$)",
         "Corrigido pelo IPCA",
         "Em Dólar",
+        "Em Dollar Index",
         "Em Ouro",
         "Em S&P 500",
         "Em Bitcoin",
