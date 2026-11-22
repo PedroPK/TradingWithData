@@ -100,6 +100,9 @@ jobs:
         env:
           CI: true
 
+      - name: Gerar comparativo do dólar
+        run: python src/dollar_comparator.py --no-show
+
       - name: Commitar e publicar docs/
         run: |
           git config user.name "github-actions[bot]"

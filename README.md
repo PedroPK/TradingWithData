@@ -71,6 +71,29 @@ O script irá:
 5. Salvar o gráfico como imagem PNG em `output/ibovespa_comparativo.png`
 6. Abrir o gráfico interativo no seu navegador padrão (apenas localmente).
 
+### Dólar em reais e Dollar Index
+
+Para gerar uma página separada comparando o dólar em reais com o Dollar Index:
+
+```bash
+python src/dollar_comparator.py
+```
+
+O resultado é salvo em `docs/dolar.html` e aberto no navegador. Use `--no-show`
+para não abrir o navegador, `--start-date 2020-01-01` para alterar o início do
+histórico ou `--docs-dir` para escolher o diretório de saída.
+
+As cotações de fechamento de `USDBRL=X` e `DX-Y.NYB` são obtidas do Yahoo Finance.
+O gráfico normaliza ambas para 100 na primeira data comum; a correlação de Pearson
+utiliza os retornos entre datas comuns consecutivas, sem preencher cotações
+ausentes. O valor exibido corresponde ao período completo, mesmo ao ampliar o
+gráfico. O Dollar Index representa uma cesta específica de moedas: divergências
+não comprovam uma causa local e correlação não implica causalidade.
+
+Exemplo da página gerada (os dados variam conforme a atualização):
+
+![Página comparando dólar em reais e Dollar Index](output/dolar_comparativo.png)
+
 ### Notebook Jupyter
 
 Abra o arquivo `10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb` diretamente no VS Code ou no Jupyter Lab:
@@ -118,6 +141,9 @@ O gráfico é publicado automaticamente em:
 
 Um **GitHub Actions** (`.github/workflows/update_chart.yml`) roda o script toda semana (segundas às 8h BRT) e publica o resultado sem necessidade de IDE ou instalação local. Você também pode acionar a atualização manualmente pela aba **Actions** do repositório.
 
+A página do dólar também é atualizada pelo workflow e estará em
+`https://<seu-usuario>.github.io/TradingWithData/dolar.html` após a publicação.
+
 Comportamento do workflow:
 1. **pull_request (main):** roda apenas testes rápidos (sem notebook completo) para feedback mais rápido.
 2. **schedule:** roda testes rápidos + notebook completo e só depois atualiza `docs/`.
@@ -138,9 +164,11 @@ TradingWithData/
 │   └── workflows/
 │       └── update_chart.yml  # GitHub Actions — atualização semanal automática
 ├── docs/
-│   └── index.html            # Gráfico interativo (GitHub Pages)
+│   ├── index.html            # Gráfico interativo (GitHub Pages)
+│   └── dolar.html            # Dólar em reais vs Dollar Index
 ├── src/
-│   └── index_comparator.py   # Script principal
+│   ├── index_comparator.py   # Script principal
+│   └── dollar_comparator.py  # Comparativo independente do dólar
 ├── output/
 │   └── ibovespa_comparativo.png  # Imagem gerada na última execução
 ├── 10_Trading_com_Dados_IBOV_em_Dolar,_IPCA_e_BTC.ipynb
